@@ -94,13 +94,13 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
 
     private static boolean frameIsEndScreen(BufferedImage image) {
         boolean result = areaContainsOnly(image, SCORE_SCREEN_SCAN_AREA, SCORE_SCREEN_ARGB);
-        drawScanArea(image, SCORE_SCREEN_SCAN_AREA, 0xFFFF0000);
+        drawScanArea(image, SCORE_SCREEN_SCAN_AREA);
         return result;
     }
 
     private static boolean frameIsBlackScreen(BufferedImage image) {
         boolean result = areaContainsOnly(image, BLACK_SCREEN_SCAN_AREA, BLACK_SCREEN_ARGB);
-        drawScanArea(image, BLACK_SCREEN_SCAN_AREA, 0xFFFF00FF);
+        drawScanArea(image, BLACK_SCREEN_SCAN_AREA);
         return result;
     }
 
@@ -118,7 +118,7 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
         return true;
     }
 
-    private static void drawScanArea(BufferedImage image, ScanArea area, int argb) {
+    private static void drawScanArea(BufferedImage image, ScanArea area) {
         // Horizontal lines
         int xEnd = area.getRight() + 1;
         for (int x = area.getLeft(); x < xEnd; x += 2) {
