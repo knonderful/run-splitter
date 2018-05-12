@@ -1,0 +1,1 @@
+Run-splitter is an application for analyzing speed run videos and automatically generating split times from the video stream.
