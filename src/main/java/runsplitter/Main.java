@@ -14,7 +14,7 @@ public class Main {
 //        String filename = "D:\\Videos\\Personal_Runs\\YI_Clean_W12_100_PB_44_21_80.mkv";
 
         WindowFrameHandler windowFrameHandler = new WindowFrameHandler(false);
-        YoshisIslandFrameHandler yiFrameHandler = new YoshisIslandFrameHandler();
+        YoshisIslandFrameHandler yiFrameHandler = new YoshisIslandFrameHandler(false);
 
         VideoFrameHandlerChain handlerChain = new VideoFrameHandlerChain(yiFrameHandler, windowFrameHandler);
         VideoAnalyzer analyzer = new VideoAnalyzer(handlerChain);

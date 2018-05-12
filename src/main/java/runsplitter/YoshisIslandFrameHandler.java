@@ -20,12 +20,23 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
      */
     private static final int RUN_START_OFFSET = (132 * 1000) / 60;
 
+    private final boolean drawDebug;
+
     private boolean inBlackScreen;
     private boolean inScoreScreen;
     private long lastBlackScreen = -1L;
     private long runStartTimestamp = -1L;
     private long lastSplit = -1L;
     private int currentLevelNumber = 1;
+
+    /**
+     * Creates a new instance.
+     *
+     * @param drawDebug A flag that specifies whether debug artifacts should be drawn.
+     */
+    public YoshisIslandFrameHandler(boolean drawDebug) {
+        this.drawDebug = drawDebug;
+    }
 
     private static ScanArea createBlackScreenScanArea() {
         int scanAreaWidth = 128;
@@ -58,7 +69,7 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
         BufferedImage image = frame.getImage();
 
         long timeStamp = frame.getTimestampMs();
-        if (frameIsBlackScreen(image)) {
+        if (frameIsBlackScreen(image, drawDebug)) {
             if (runStartTimestamp < 0) {
                 runStartTimestamp = timeStamp - RUN_START_OFFSET;
                 System.out.printf("%s - Start%n", formatTimestamp(runStartTimestamp));
@@ -75,7 +86,7 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
         }
 
         if (!inScoreScreen) {
-            if (frameIsEndScreen(image)) {
+            if (frameIsEndScreen(image, drawDebug)) {
                 long splitTime;
                 if (lastSplit < 0) {
                     splitTime = lastBlackScreen - runStartTimestamp;
@@ -84,7 +95,7 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
                 }
 
                 System.out.printf("%s - %s Level %d completed%n", formatTimestamp(lastBlackScreen), formatTimestamp(splitTime), currentLevelNumber);
-                
+
                 lastSplit = lastBlackScreen;
                 currentLevelNumber++;
                 inScoreScreen = true;
@@ -92,15 +103,19 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
         }
     }
 
-    private static boolean frameIsEndScreen(BufferedImage image) {
+    private static boolean frameIsEndScreen(BufferedImage image, boolean drawArea) {
         boolean result = areaContainsOnly(image, SCORE_SCREEN_SCAN_AREA, SCORE_SCREEN_ARGB);
-        drawScanArea(image, SCORE_SCREEN_SCAN_AREA);
+        if (drawArea) {
+            drawScanArea(image, SCORE_SCREEN_SCAN_AREA);
+        }
         return result;
     }
 
-    private static boolean frameIsBlackScreen(BufferedImage image) {
+    private static boolean frameIsBlackScreen(BufferedImage image, boolean drawArea) {
         boolean result = areaContainsOnly(image, BLACK_SCREEN_SCAN_AREA, BLACK_SCREEN_ARGB);
-        drawScanArea(image, BLACK_SCREEN_SCAN_AREA);
+        if (drawArea) {
+            drawScanArea(image, BLACK_SCREEN_SCAN_AREA);
+        }
         return result;
     }
 
