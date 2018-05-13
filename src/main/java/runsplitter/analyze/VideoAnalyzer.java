@@ -10,16 +10,28 @@ import java.io.IOException;
 import runsplitter.VideoFrameHandler;
 
 /**
- *
+ * Class for analyzing video files.
  */
 public class VideoAnalyzer {
 
     private final VideoFrameHandler frameHandler;
 
+    /**
+     * Creates a new instance.
+     *
+     * @param frameHandler The {@link VideoFrameHandler} for handling video frames.
+     */
     public VideoAnalyzer(VideoFrameHandler frameHandler) {
         this.frameHandler = frameHandler;
     }
 
+    /**
+     * Plays the video with the provided file name.
+     *
+     * @param filename The file name.
+     * @throws InterruptedException
+     * @throws IOException
+     */
     public void playVideo(String filename) throws InterruptedException, IOException {
         Demuxer demuxer = Demuxer.make();
         demuxer.open(filename, null, false, true, null, null);
