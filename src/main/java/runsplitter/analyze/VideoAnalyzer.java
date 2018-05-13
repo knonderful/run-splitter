@@ -59,7 +59,6 @@ public class VideoAnalyzer {
                 videoDecoder.getPixelFormat());
 
         final VideoFrameImpl frame = new VideoFrameImpl(picture);
-
         final MediaPacket packet = MediaPacket.make();
         while (demuxer.read(packet) >= 0) {
             if (packet.getStreamIndex() == videoStreamId) {

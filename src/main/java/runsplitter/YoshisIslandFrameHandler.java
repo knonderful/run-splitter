@@ -1,6 +1,8 @@
 package runsplitter;
 
 import java.awt.image.BufferedImage;
+import runsplitter.speedrun.Instant;
+import runsplitter.speedrun.MutableAnalysis;
 
 /**
  * A {@link VideoFrameHandler} for analyzing Yoshi's Island speed run videos.
@@ -12,14 +14,14 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
     private static final ScanArea BLACK_SCREEN_SCAN_AREA = createBlackScreenScanArea();
     private static final ScanArea SCORE_SCREEN_SCAN_AREA = createScoreScreenScanArea();
     /**
-     * The offset between the start of the run and the first black screen.
-     * It takes about 132 frames from the level select start to the black
-     * screen. The start of the run is the start of the first black screen minus
-     * the time it takes for 132 frames. Note that the start of the run might be
-     * negative, if the video starts after the level was selected.
+     * The offset between the start of the run and the first black screen. It takes about 132 frames from the level
+     * select start to the black screen. The start of the run is the start of the first black screen minus the time it
+     * takes for 132 frames. Note that the start of the run might be negative, if the video starts after the level was
+     * selected.
      */
     private static final int RUN_START_OFFSET = (132 * 1000) / 60;
 
+    private final MutableAnalysis analysis;
     private final boolean drawDebug;
 
     private boolean inBlackScreen;
@@ -32,9 +34,11 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
     /**
      * Creates a new instance.
      *
+     * @param analysis  The {@link MutableAnalysis}.
      * @param drawDebug A flag that specifies whether debug artifacts should be drawn.
      */
-    public YoshisIslandFrameHandler(boolean drawDebug) {
+    public YoshisIslandFrameHandler(MutableAnalysis analysis, boolean drawDebug) {
+        this.analysis = analysis;
         this.drawDebug = drawDebug;
     }
 
@@ -58,10 +62,7 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
     }
 
     private static String formatTimestamp(long millis) {
-        long second = (millis / 1000) % 60;
-        long minute = (millis / (1000 * 60)) % 60;
-        long hour = (millis / (1000 * 60 * 60)) % 24;
-        return String.format("%02d:%02d:%02d.%03d", hour, minute, second, millis % 1000);
+        return new Instant(millis).toString();
     }
 
     @Override
@@ -72,6 +73,7 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
         if (frameIsBlackScreen(image, drawDebug)) {
             if (runStartTimestamp < 0) {
                 runStartTimestamp = timeStamp - RUN_START_OFFSET;
+                analysis.setStart(new Instant(runStartTimestamp));
                 System.out.printf("%s - Start%n", formatTimestamp(runStartTimestamp));
             }
             if (!inBlackScreen) {
@@ -95,6 +97,7 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
                 }
 
                 System.out.printf("%s - %s Level %d completed%n", formatTimestamp(lastBlackScreen), formatTimestamp(splitTime), currentLevelNumber);
+                analysis.getSpeedrun().addSplit(new Instant(lastBlackScreen - runStartTimestamp));
 
                 lastSplit = lastBlackScreen;
                 currentLevelNumber++;
