@@ -1,5 +1,6 @@
 package runsplitter;
 
+import runsplitter.application.gui.GuiApplication;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -7,6 +8,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.Collection;
 import java.util.Collections;
+import javafx.application.Application;
 import runsplitter.analyze.VideoAnalyzer;
 import runsplitter.speedrun.Analysis;
 import runsplitter.speedrun.MutableAnalysis;
@@ -17,7 +19,7 @@ import runsplitter.speedrun.gson.JsonConverter;
  */
 public class Main {
 
-    public static void main(String[] args) throws InterruptedException, IOException {
+    public static void oldMain(String[] args) throws InterruptedException, IOException {
         String filename = "YI_W1_100_PB_16_57_13.mkv";
 //        String filename = "YI_W2_100_PB_24_07_76.mkv";
 //        String filename = "YI_Clean_W12_100_PB_44_21_80.mkv";
@@ -45,4 +47,7 @@ public class Main {
         windowFrameHandler.dispose();
     }
 
+    public static void main(String[] args) {
+        Application.launch(GuiApplication.class, args);
+    }
 }
