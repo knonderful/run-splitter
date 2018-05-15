@@ -24,6 +24,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
@@ -124,6 +125,8 @@ public class GuiApplication extends Application {
                 controlButtonsHBox
         );
         centerBox.setPadding(new Insets(2));
+        VBox.setVgrow(splitsTableView, Priority.ALWAYS);
+
         return centerBox;
     }
 
