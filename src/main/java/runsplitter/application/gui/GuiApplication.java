@@ -1,7 +1,6 @@
 package runsplitter.application.gui;
 
 import com.sun.javafx.collections.ImmutableObservableList;
-import java.io.File;
 import java.util.function.Supplier;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -24,9 +23,9 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import runsplitter.application.ApplicationSettingsPersistence;
@@ -108,6 +107,10 @@ public class GuiApplication extends Application {
 
         // Video/run controls
         Button playBtn = new Button("Play");
+        Button editBtn = new Button("Edit");
+        HBox controlButtonsHBox = new HBox(playBtn, editBtn);
+        controlButtonsHBox.setSpacing(10);
+        controlButtonsHBox.setAlignment(Pos.CENTER);
 
         // Layout of all elements in this pane
         VBox centerBox = new VBox(
@@ -118,7 +121,7 @@ public class GuiApplication extends Application {
                 outputModeLbl,
                 outputModeCombo,
                 controlsSeparator,
-                playBtn
+                controlButtonsHBox
         );
         centerBox.setPadding(new Insets(2));
         return centerBox;
@@ -147,14 +150,8 @@ public class GuiApplication extends Application {
 
         StackPane analyzeControlsSeparator = new StackPane(new Separator());
         analyzeControlsSeparator.setPadding(new Insets(10, 2, 10, 2));
-        Button analyzeVideoButton = new Button("Analyze video");
-        analyzeVideoButton.setOnAction(evt -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setInitialDirectory(new File("D:\\Videos\\Personal_Runs"));
-            fileChooser.showOpenDialog(primaryStage);
-        });
 
-        VBox leftVBox = new VBox(gameLbl, gameListView, categoryLbl, categoryListView, runsLbl, runsTableView, analyzeControlsSeparator, analyzeVideoButton);
+        VBox leftVBox = new VBox(gameLbl, gameListView, categoryLbl, categoryListView, runsLbl, runsTableView);
         leftVBox.setPadding(new Insets(2));
         return leftVBox;
     }
