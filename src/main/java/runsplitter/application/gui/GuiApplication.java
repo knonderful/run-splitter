@@ -1,9 +1,11 @@
 package runsplitter.application.gui;
 
 import com.sun.javafx.collections.ImmutableObservableList;
+import java.io.IOException;
 import java.util.function.Supplier;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -45,6 +47,8 @@ public class GuiApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        GuiHelper guiHelper = new GuiHelper();
+
         // TODO: Catch loading issues and show an error message in the GUI or something...
         this.state = new ApplicationState(ApplicationSettingsPersistence.load());
         Supplier<ApplicationState> stateSupplier = this::getState;
@@ -52,8 +56,8 @@ public class GuiApplication extends Application {
         // Exit the application if all windows are closed
         Platform.setImplicitExit(true);
 
-        SplitPane splitPane = new SplitPane(createRunSelectionPane(primaryStage), createCurrentRunPane());
-        
+        SplitPane splitPane = new SplitPane(createRunSelectionPane(guiHelper, primaryStage), createCurrentRunPane());
+
         BorderPane mainPane = new BorderPane(
                 splitPane, // center
                 createMenuPane(stateSupplier, primaryStage), // top
@@ -134,14 +138,37 @@ public class GuiApplication extends Application {
         return centerBox;
     }
 
-    private static Node createRunSelectionPane(Stage primaryStage) {
-        Label gameLbl = new Label("Game:");
+    private static Node createRunSelectionPane(GuiHelper guiHelper, Stage primaryStage) throws IOException {
         ListView<String> gameListView = new ListView<>(new ImmutableObservableList<>("Yoshi's Island", "Mega Man 2"));
 
-        Label categoryLbl = new Label("Category:");
+        ReadOnlyObjectProperty<String> gameSelectedItemProperty = gameListView.getSelectionModel().selectedItemProperty();
+        Button gameAddBtn = guiHelper.createAddButton();
+        Button gameRemoveBtn = guiHelper.createRemoveButton(gameSelectedItemProperty);
+        Button gameEditBtn = guiHelper.createEditButton(gameSelectedItemProperty);
+        Button gameUpBtn = guiHelper.createMoveUpButton(gameSelectedItemProperty);
+        Button gameDownBtn = guiHelper.createMoveDownButton(gameSelectedItemProperty);
+
+        VBox gameBox = new VBox(
+                new Label("Game:"),
+                gameListView,
+                createControlsBox(gameAddBtn, gameRemoveBtn, gameEditBtn, gameUpBtn, gameDownBtn)
+        );
+
         ListView<String> categoryListView = new ListView<>(new ImmutableObservableList<>("Clean World 1-2 100%", "Full 100%", "World 1 100%", "World 2 100%", "World 3 100%"));
 
-        Label runsLbl = new Label("Runs:");
+        ReadOnlyObjectProperty<String> categorySelectedItemProperty = categoryListView.getSelectionModel().selectedItemProperty();
+        Button categoryAddBtn = guiHelper.createAddButton();
+        Button categoryRemoveBtn = guiHelper.createRemoveButton(categorySelectedItemProperty);
+        Button categoryEditBtn = guiHelper.createEditButton(categorySelectedItemProperty);
+        Button categoryUpBtn = guiHelper.createMoveUpButton(categorySelectedItemProperty);
+        Button categoryDownBtn = guiHelper.createMoveDownButton(categorySelectedItemProperty);
+
+        VBox categoryBox = new VBox(
+                new Label("Category:"),
+                categoryListView,
+                createControlsBox(categoryAddBtn, categoryRemoveBtn, categoryEditBtn, categoryUpBtn, categoryDownBtn)
+        );
+
         TableColumn<RunEntry, String> runsTimeCol = new TableColumn<>("Total time");
         runsTimeCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getTotalTime().toTimestamp()));
         TableColumn<RunEntry, String> runsVideoCol = new TableColumn<>("Video");
@@ -155,12 +182,31 @@ public class GuiApplication extends Application {
         runsItems.add(new RunEntry(new Instant(421878L), "W1_Got_lava_skip.mkv"));
         runsItems.add(new RunEntry(new Instant(621878L), "W1_First_try.mkv"));
 
+        ReadOnlyObjectProperty<RunEntry> runsSelectedItemProperty = runsTableView.getSelectionModel().selectedItemProperty();
+        Button runsAddBtn = guiHelper.createAddButton();
+        Button runsRemoveBtn = guiHelper.createRemoveButton(runsSelectedItemProperty);
+        Button runsEditBtn = guiHelper.createEditButton(runsSelectedItemProperty);
+
+        VBox runsBox = new VBox(
+                new Label("Runs:"),
+                runsTableView,
+                createControlsBox(runsAddBtn, runsRemoveBtn, runsEditBtn)
+        );
+
         StackPane analyzeControlsSeparator = new StackPane(new Separator());
         analyzeControlsSeparator.setPadding(new Insets(10, 2, 10, 2));
 
-        VBox leftVBox = new VBox(gameLbl, gameListView, categoryLbl, categoryListView, runsLbl, runsTableView);
+        VBox leftVBox = new VBox(gameBox, categoryBox, runsBox);
         leftVBox.setPadding(new Insets(2));
         return leftVBox;
+    }
+
+    private static Node createControlsBox(Button... buttons) {
+        HBox gameControlsBox = new HBox(buttons);
+        gameControlsBox.setAlignment(Pos.TOP_RIGHT);
+        gameControlsBox.setPadding(new Insets(1, 0, 1, 0));
+        gameControlsBox.setSpacing(2);
+        return gameControlsBox;
     }
 
     private static void showSettings(Supplier<ApplicationState> stateSupplier, Stage primaryStage) {
