@@ -20,6 +20,7 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
@@ -51,12 +52,14 @@ public class GuiApplication extends Application {
         // Exit the application if all windows are closed
         Platform.setImplicitExit(true);
 
+        SplitPane splitPane = new SplitPane(createRunSelectionPane(primaryStage), createCurrentRunPane());
+        
         BorderPane mainPane = new BorderPane(
-                createCurrentRunPane(), // center
+                splitPane, // center
                 createMenuPane(stateSupplier, primaryStage), // top
                 null, // right
                 null, // bottom
-                createRunSelectionPane(primaryStage) // left
+                null // left
         );
 
         Scene mainScene = new Scene(mainPane, 640, 480);
