@@ -8,9 +8,9 @@ import java.nio.file.Path;
 public class ApplicationSettings {
 
     private Path videosDirectory;
+    private GuiTheme theme;
 
-    private ApplicationSettings(Path videosDirectory) {
-        this.videosDirectory = videosDirectory;
+    private ApplicationSettings() {
     }
 
     /**
@@ -19,7 +19,7 @@ public class ApplicationSettings {
      * @return The path.
      */
     public Path getVideosDirectory() {
-        return videosDirectory;
+        return get(videosDirectory, PersistenceUtil.getUserHome());
     }
 
     /**
@@ -32,11 +32,36 @@ public class ApplicationSettings {
     }
 
     /**
+     * Retrieves the {@link GuiTheme}.
+     *
+     * @return The {@link GuiTheme}.
+     */
+    public GuiTheme getTheme() {
+        return get(theme, GuiTheme.DEFAULT);
+    }
+
+    /**
+     * Sets the {@link GuiTheme}.
+     *
+     * @param theme The {@link GuiTheme}.
+     */
+    public void setTheme(GuiTheme theme) {
+        this.theme = theme;
+    }
+
+    /**
      * Creates the default {@link ApplicationSettings}.
      *
      * @return The default {@link ApplicationSettings}.
      */
     public static ApplicationSettings getDefault() {
-        return new ApplicationSettings(PersistenceUtil.getUserHome());
+        return new ApplicationSettings();
+    }
+
+    private static <T> T get(T value, T defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        return value;
     }
 }

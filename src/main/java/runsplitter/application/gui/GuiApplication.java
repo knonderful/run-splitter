@@ -47,11 +47,11 @@ public class GuiApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        GuiHelper guiHelper = new GuiHelper();
-
         // TODO: Catch loading issues and show an error message in the GUI or something...
         this.state = new ApplicationState(ApplicationSettingsPersistence.load());
         Supplier<ApplicationState> stateSupplier = this::getState;
+
+        GuiHelper guiHelper = new GuiHelper(state.getSettings().getTheme());
 
         // Exit the application if all windows are closed
         Platform.setImplicitExit(true);
@@ -60,17 +60,14 @@ public class GuiApplication extends Application {
 
         BorderPane mainPane = new BorderPane(
                 splitPane, // center
-                createMenuPane(stateSupplier, primaryStage), // top
+                createMenuPane(guiHelper, stateSupplier, primaryStage), // top
                 null, // right
                 null, // bottom
                 null // left
         );
 
-        Scene mainScene = new Scene(mainPane, 640, 480);
-        GuiHelper.applyTheme(mainScene);
-
+        guiHelper.initializeScene(new Scene(mainPane, 640, 480), primaryStage);
         primaryStage.setTitle(APPLICATION_TITLE);
-        primaryStage.setScene(mainScene);
         primaryStage.show();
     }
 
@@ -209,14 +206,14 @@ public class GuiApplication extends Application {
         return gameControlsBox;
     }
 
-    private static void showSettings(Supplier<ApplicationState> stateSupplier, Stage primaryStage) {
-        Stage settingsWindow = SettingsWindow.createWindow(stateSupplier.get().getSettings(), ApplicationSettingsPersistence::save, String.format("%s - Settings", APPLICATION_TITLE));
+    private static void showSettings(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage) {
+        Stage settingsWindow = SettingsWindow.createWindow(guiHelper, stateSupplier.get().getSettings(), ApplicationSettingsPersistence::save, String.format("%s - Settings", APPLICATION_TITLE));
         settingsWindow.initModality(Modality.WINDOW_MODAL);
         settingsWindow.initOwner(primaryStage);
         settingsWindow.show();
     }
 
-    private static Node createMenuPane(Supplier<ApplicationState> stateSupplier, Stage primaryStage) {
+    private static Node createMenuPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage) {
         // File menu
         MenuItem fileQuit = new MenuItem("Quit");
         fileQuit.setOnAction(evt -> primaryStage.close());
@@ -224,7 +221,7 @@ public class GuiApplication extends Application {
 
         // Tools menu
         MenuItem toolsSettings = new MenuItem("Settings...");
-        toolsSettings.setOnAction(evt -> showSettings(stateSupplier, primaryStage));
+        toolsSettings.setOnAction(evt -> showSettings(guiHelper, stateSupplier, primaryStage));
         Menu toolsMenu = new Menu("Tools", null, toolsSettings);
 
         return new MenuBar(fileMenu, toolsMenu);

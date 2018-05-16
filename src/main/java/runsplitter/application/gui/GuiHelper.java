@@ -3,13 +3,20 @@ package runsplitter.application.gui;
 import afester.javafx.svg.SvgLoader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Tooltip;
+import javafx.stage.Stage;
+import runsplitter.application.GuiTheme;
 import runsplitter.common.Thrower;
 
 /**
@@ -17,8 +24,74 @@ import runsplitter.common.Thrower;
  */
 public class GuiHelper {
 
-    public static void applyTheme(Scene mainScene) {
-        mainScene.getStylesheets().add("/runsplitter/application/theme.css");
+    private final Collection<Scene> scenes = new HashSet<>(4);
+    private List<String> defaultStylesheets;
+    private GuiTheme currentTheme;
+
+    GuiHelper(GuiTheme theme) {
+        this.currentTheme = theme;
+    }
+
+    /**
+     * Initializes a {@link Scene}.
+     * <p>
+     * This applies common characteristics for all {@link Scene}s in the application, like applying the theme.
+     *
+     * @param scene The {@link Scene}.
+     * @param stage The {@link Stage} for the {@link Scene}.
+     */
+    public void initializeScene(Scene scene, Stage stage) {
+        // Only grab the default stylesheets once, when we create the first scene.
+        if (defaultStylesheets == null) {
+            defaultStylesheets = scene.getStylesheets().stream().collect(Collectors.toList());
+        }
+
+        stage.setScene(scene);
+        stage.setOnHiding(evt -> unregisterScene(scene));
+        stage.setOnShowing(evt -> registerScene(scene));
+    }
+
+    /**
+     * Sets the current {@link GuiTheme}.
+     *
+     * @param theme The {@link GuiTheme}.
+     */
+    public void setCurrentTheme(GuiTheme theme) {
+        if (this.currentTheme == theme) {
+            return;
+        }
+
+        this.currentTheme = theme;
+        scenes.forEach(this::applyThemeToScene);
+    }
+
+    private void registerScene(Scene scene) {
+        applyThemeToScene(scene);
+        scenes.add(scene);
+    }
+
+    private void unregisterScene(Scene scene) {
+        scenes.remove(scene);
+    }
+
+    private void applyThemeToScene(Scene scene) throws IllegalStateException {
+        ObservableList<String> sheets = scene.getStylesheets();
+        sheets.clear();
+        switch (currentTheme) {
+            case COMPACT:
+                sheets.add("/runsplitter/application/theme.css");
+                break;
+            case DEFAULT:
+                // This should not happen, unless there is a coding error.
+                if (defaultStylesheets == null) {
+                    throw new IllegalStateException("Can not set theme yet; the default stylesheets have not been set.");
+                }
+
+                sheets.addAll(defaultStylesheets);
+                break;
+            default:
+                throw new IllegalStateException(String.format("Unknown theme: %s.", currentTheme));
+        }
     }
 
     public static void handleException(Thrower thrower, String message) {
