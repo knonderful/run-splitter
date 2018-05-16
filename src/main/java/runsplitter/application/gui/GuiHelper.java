@@ -11,7 +11,7 @@ import runsplitter.common.Thrower;
 public class GuiHelper {
 
     public static void applyTheme(Scene mainScene) {
-        mainScene.getStylesheets().add("theme.css");
+        mainScene.getStylesheets().add("/runsplitter/application/theme.css");
     }
 
     public static void handleException(Thrower thrower, String message) {
