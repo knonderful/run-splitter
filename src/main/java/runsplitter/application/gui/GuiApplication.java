@@ -60,6 +60,7 @@ public class GuiApplication extends Application {
         );
 
         Scene mainScene = new Scene(mainPane, 640, 480);
+        GuiHelper.applyTheme(mainScene);
 
         primaryStage.setTitle(APPLICATION_TITLE);
         primaryStage.setScene(mainScene);

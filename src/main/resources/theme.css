@@ -1,0 +1,41 @@
+.root {
+    /*
+    -fx-font-size: 75%;
+    /**/
+}
+
+.button, .text-input {
+    -fx-padding: 2px 4px 2px 4px;
+}
+
+.menu-bar {
+    -fx-padding: 0px 4px 0px 4px;
+    -fx-spacing: 8px;
+}
+
+.menu, .menu-item, .menu-button, .list-cell {
+    -fx-padding: 0px 4px 0px 4px;
+    -fx-spacing: 0;
+}
+
+/* Drop-down menu, like for the menu bar. */
+.context-menu {
+    -fx-padding: 0;
+}
+
+.table-column {
+    -fx-padding: 0px 3px 0px 3px;
+}
+
+.table-view {
+    -fx-cell-size: 10;
+}
+
+.table-view .column-header,
+.tree-table-view .column-header {
+    /*
+     * Setting this to really small makes the stuff inside the header size the header (as it should be).
+     * Otherwise we end up with really spacey header rows. :/
+     */
+    -fx-size: 1;
+}

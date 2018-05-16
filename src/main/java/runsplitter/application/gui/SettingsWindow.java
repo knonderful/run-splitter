@@ -66,7 +66,9 @@ public class SettingsWindow {
         layout.setSpacing(10);
 
         layout.setPadding(new Insets(2));
-        stage.setScene(new Scene(layout));
+        Scene scene = new Scene(layout);
+        GuiHelper.applyTheme(scene);
+        stage.setScene(scene);
         return stage;
     }
 }
