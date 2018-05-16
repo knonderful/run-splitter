@@ -2,6 +2,9 @@ package runsplitter.application.gui;
 
 import com.sun.javafx.collections.ImmutableObservableList;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Supplier;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -34,6 +37,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import runsplitter.application.ApplicationSettingsPersistence;
 import runsplitter.application.ApplicationState;
+import runsplitter.application.Game;
+import runsplitter.application.GameLibrary;
 import runsplitter.speedrun.Instant;
 
 /**
@@ -43,20 +48,21 @@ public class GuiApplication extends Application {
 
     private static final String APPLICATION_TITLE = "Run splitter";
 
-    private ApplicationState state;
-
     @Override
     public void start(Stage primaryStage) throws Exception {
         // TODO: Catch loading issues and show an error message in the GUI or something...
-        this.state = new ApplicationState(ApplicationSettingsPersistence.load());
-        Supplier<ApplicationState> stateSupplier = this::getState;
+        ApplicationState state = new ApplicationState(
+                ApplicationSettingsPersistence.load(),
+                new GameLibrary() // TODO: load
+        );
+        Supplier<ApplicationState> stateSupplier = () -> state;
 
         GuiHelper guiHelper = new GuiHelper(state.getSettings().getTheme());
 
         // Exit the application if all windows are closed
         Platform.setImplicitExit(true);
 
-        SplitPane splitPane = new SplitPane(createRunSelectionPane(guiHelper, primaryStage), createCurrentRunPane());
+        SplitPane splitPane = new SplitPane(createRunSelectionPane(guiHelper, stateSupplier), createCurrentRunPane());
 
         BorderPane mainPane = new BorderPane(
                 splitPane, // center
@@ -135,11 +141,19 @@ public class GuiApplication extends Application {
         return centerBox;
     }
 
-    private static Node createRunSelectionPane(GuiHelper guiHelper, Stage primaryStage) throws IOException {
-        ListView<String> gameListView = new ListView<>(new ImmutableObservableList<>("Yoshi's Island", "Mega Man 2"));
+    private static Node createRunSelectionPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier) throws IOException {
+        List<String> gameList = new ArrayList<>(Arrays.asList("Yoshi's Island", "Mega Man 2"));
+        ObservableList<String> obsGameList = FXCollections.observableList(gameList);
+        ListView<String> gameListView = new ListView<>(obsGameList);
 
         ReadOnlyObjectProperty<String> gameSelectedItemProperty = gameListView.getSelectionModel().selectedItemProperty();
         Button gameAddBtn = guiHelper.createAddButton();
+        gameAddBtn.setOnAction(evt -> {
+            Game game = EditGameDialog.showAndWait(guiHelper, null);
+            if (game != null) {
+                obsGameList.add(game.getName());
+            }
+        });
         Button gameRemoveBtn = guiHelper.createRemoveButton(gameSelectedItemProperty);
         Button gameEditBtn = guiHelper.createEditButton(gameSelectedItemProperty);
         Button gameUpBtn = guiHelper.createMoveUpButton(gameSelectedItemProperty);
@@ -225,10 +239,6 @@ public class GuiApplication extends Application {
         Menu toolsMenu = new Menu("Tools", null, toolsSettings);
 
         return new MenuBar(fileMenu, toolsMenu);
-    }
-
-    private ApplicationState getState() {
-        return state;
     }
 
     /**

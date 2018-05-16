@@ -6,25 +6,31 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Tooltip;
 import javafx.stage.Stage;
+import org.controlsfx.validation.ValidationSupport;
 import runsplitter.application.GuiTheme;
 import runsplitter.common.Thrower;
 
 /**
- *
+ * Helper class for GUI-related work.
  */
 public class GuiHelper {
 
-    private final Collection<Scene> scenes = new HashSet<>(4);
+    private final Collection<Supplier<ObservableList<String>>> stylesheetListSuppliers = new HashSet<>(4);
     private List<String> defaultStylesheets;
     private GuiTheme currentTheme;
 
@@ -47,8 +53,39 @@ public class GuiHelper {
         }
 
         stage.setScene(scene);
-        stage.setOnHiding(evt -> unregisterScene(scene));
-        stage.setOnShowing(evt -> registerScene(scene));
+        stage.setOnHiding(evt -> unregisterStylesheetSupplier(scene::getStylesheets));
+        stage.setOnShowing(evt -> registerStylesheetSupplier(scene::getStylesheets));
+    }
+
+    /**
+     * Creates a dialog with an OK and Cancel button.
+     *
+     *
+     * @param title      The title of the dialog.
+     * @param form       The form inside the dialog (excluding the control buttons).
+     * @param validation The {@link ValidationSupport} for the form.
+     * @return The {@link Dialog}.
+     */
+    public Dialog<ButtonType> createSaveCancelDialog(String title, Node form, ValidationSupport validation) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle(title);
+        DialogPane dialogPane = new DialogPane();
+        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        registerStylesheetSupplier(dialogPane::getStylesheets);
+        dialogPane.setContent(form);
+        dialog.setDialogPane(dialogPane);
+
+        if (validation != null) {
+            // Prevent the form from being closed if the OK button is pressed while there are validation errors
+            Button okBtn = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
+            okBtn.addEventFilter(ActionEvent.ACTION, event -> {
+                if (validation.isInvalid()) {
+                    event.consume();
+                }
+            });
+        }
+
+        return dialog;
     }
 
     /**
@@ -62,20 +99,20 @@ public class GuiHelper {
         }
 
         this.currentTheme = theme;
-        scenes.forEach(this::applyThemeToScene);
+        stylesheetListSuppliers.forEach(this::applyThemeTo);
     }
 
-    private void registerScene(Scene scene) {
-        applyThemeToScene(scene);
-        scenes.add(scene);
+    private void registerStylesheetSupplier(Supplier<ObservableList<String>> parent) {
+        applyThemeTo(parent);
+        stylesheetListSuppliers.add(parent);
     }
 
-    private void unregisterScene(Scene scene) {
-        scenes.remove(scene);
+    private void unregisterStylesheetSupplier(Supplier<ObservableList<String>> parent) {
+        stylesheetListSuppliers.remove(parent);
     }
 
-    private void applyThemeToScene(Scene scene) throws IllegalStateException {
-        ObservableList<String> sheets = scene.getStylesheets();
+    private void applyThemeTo(Supplier<ObservableList<String>> scene) throws IllegalStateException {
+        ObservableList<String> sheets = scene.get();
         sheets.clear();
         switch (currentTheme) {
             case COMPACT:
