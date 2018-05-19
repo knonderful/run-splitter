@@ -2,9 +2,6 @@ package runsplitter.application.gui;
 
 import com.sun.javafx.collections.ImmutableObservableList;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.Supplier;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -17,8 +14,11 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -142,23 +142,96 @@ public class GuiApplication extends Application {
     }
 
     private static Node createRunSelectionPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier) throws IOException {
-        List<String> gameList = new ArrayList<>(Arrays.asList("Yoshi's Island", "Mega Man 2"));
-        ObservableList<String> obsGameList = FXCollections.observableList(gameList);
-        ListView<String> gameListView = new ListView<>(obsGameList);
+        GameLibrary library = stateSupplier.get().getLibrary();
 
-        ReadOnlyObjectProperty<String> gameSelectedItemProperty = gameListView.getSelectionModel().selectedItemProperty();
-        Button gameAddBtn = guiHelper.createAddButton();
-        gameAddBtn.setOnAction(evt -> {
-            Game game = EditGameDialog.showAndWait(guiHelper, null);
-            if (game != null) {
-                obsGameList.add(game.getName());
+        ListView<Game> gameListView = new ListView<>(FXCollections.observableList(library.getGamesModifiable()));
+        gameListView.setCellFactory(listView -> new ListCell<Game>() {
+            @Override
+            protected void updateItem(Game game, boolean empty) {
+                super.updateItem(game, empty);
+
+                if (empty || game == null || game.getName() == null) {
+                    setText(null);
+                } else {
+                    setText(game.getName());
+                }
             }
         });
-        Button gameRemoveBtn = guiHelper.createRemoveButton(gameSelectedItemProperty);
-        Button gameEditBtn = guiHelper.createEditButton(gameSelectedItemProperty);
-        Button gameUpBtn = guiHelper.createMoveUpButton(gameSelectedItemProperty);
-        Button gameDownBtn = guiHelper.createMoveDownButton(gameSelectedItemProperty);
 
+        ReadOnlyObjectProperty<Game> gameSelectedItemProperty = gameListView.getSelectionModel().selectedItemProperty();
+        Button gameAddBtn = guiHelper.createAddButton();
+        gameAddBtn.setOnAction(event -> {
+            Game game = EditGameDialog.showAndWait(guiHelper, null);
+            if (game != null) {
+                gameListView.getItems().add(game);
+            }
+        });
+
+        Button gameRemoveBtn = guiHelper.createRemoveButton(gameSelectedItemProperty);
+        gameRemoveBtn.setOnAction(event -> {
+            Game game = gameSelectedItemProperty.get();
+            if (game == null) {
+                return;
+            }
+
+            Dialog<ButtonType> confirmationDialog = new Dialog<>();
+            confirmationDialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+            confirmationDialog.setContentText(String.format("Are you sure that you want to remove '%s'?", game.getName()));
+            confirmationDialog.setTitle(String.format("Remove '%s'", game.getName()));
+            confirmationDialog.showAndWait().ifPresent(btnType -> {
+                if (btnType == ButtonType.OK) {
+                    gameListView.getItems().remove(game);
+                }
+            });
+        });
+
+        Button gameEditBtn = guiHelper.createEditButton(gameSelectedItemProperty);
+        gameEditBtn.setOnAction(event -> {
+            Game game = gameSelectedItemProperty.get();
+            if (game == null) {
+                return;
+            }
+
+            EditGameDialog.showAndWait(guiHelper, game);
+            // Refresh the view in case the name of the game was changed
+            gameListView.refresh();
+        });
+
+        Button gameUpBtn = guiHelper.createMoveUpButton(gameSelectedItemProperty);
+        gameUpBtn.setOnAction(event -> {
+            Game game = gameSelectedItemProperty.get();
+            if (game == null) {
+                return;
+            }
+
+            ObservableList<Game> items = gameListView.getItems();
+            int index = items.indexOf(game);
+            if (index <= 0) {
+                return;
+            }
+            items.remove(index);
+            int targetIndex = index - 1;
+            items.add(targetIndex, game);
+            gameListView.getSelectionModel().select(targetIndex);
+        });
+
+        Button gameDownBtn = guiHelper.createMoveDownButton(gameSelectedItemProperty);
+        gameDownBtn.setOnAction(event -> {
+            Game game = gameSelectedItemProperty.get();
+            if (game == null) {
+                return;
+            }
+
+            ObservableList<Game> items = gameListView.getItems();
+            int index = items.indexOf(game);
+            if (index >= items.size() - 1) {
+                return;
+            }
+            items.remove(index);
+            int targetIndex = index + 1;
+            items.add(targetIndex, game);
+            gameListView.getSelectionModel().select(targetIndex);
+        });
         VBox gameBox = new VBox(
                 new Label("Game:"),
                 gameListView,

@@ -139,8 +139,30 @@ public class GuiHelper {
         }
     }
 
+    public static void handleException(Thrower thrower) {
+        try {
+            thrower.call();
+        } catch (Throwable e) {
+            popupError(e);
+        }
+    }
+
+    public static void popupError(Throwable error) {
+        popupError(null, error);
+    }
+
     public static void popupError(String message, Throwable error) {
-        Alert alert = new Alert(Alert.AlertType.ERROR, String.format("%s: %s", message, error.getMessage()), ButtonType.OK);
+        String msg;
+        if (message == null) {
+            msg = error.getMessage();
+            if (msg == null) {
+                msg = String.format("An unknown error occurred: %s.", error.getClass().getSimpleName());
+            }
+        } else {
+            msg = String.format("%s: %s", message, error.getMessage());
+        }
+
+        Alert alert = new Alert(Alert.AlertType.ERROR, msg, ButtonType.OK);
         alert.showAndWait();
     }
 

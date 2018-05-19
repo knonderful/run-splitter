@@ -1,49 +1,21 @@
 package runsplitter.application;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import runsplitter.common.DuplicateElementException;
-import runsplitter.common.UnknownElementException;
 
 /**
  *
  */
 public class GameLibrary {
 
-    private final MovableList<Game> games = new MovableList<Game>(new LinkedList<>(), Game::getName) {
-        @Override
-        protected void throwUnknownElementException(Game game) throws UnknownElementException {
-            throw new UnknownElementException(String.format("Library does not contain %s.", game.getName()));
-        }
-
-        @Override
-        protected void throwDuplicateElementException(Game game) throws DuplicateElementException {
-            throw new DuplicateElementException(String.format("Library already contains game %s.", game.getName()));
-        }
-    };
+    private final List<Game> games = new LinkedList<>();
 
     public List<Game> getGames() {
-        return games.getList();
+        return Collections.unmodifiableList(games);
     }
 
-    public void add(Game element) throws DuplicateElementException {
-        games.add(element);
+    public List<Game> getGamesModifiable() {
+        return games;
     }
-
-    public void remove(Game element) throws UnknownElementException {
-        games.remove(element);
-    }
-
-    public void clear() {
-        games.clear();
-    }
-
-    public void moveUp(Game element) throws UnknownElementException {
-        games.moveUp(element);
-    }
-
-    public void moveDown(Game category) throws UnknownElementException {
-        games.moveDown(category);
-    }
-
 }
