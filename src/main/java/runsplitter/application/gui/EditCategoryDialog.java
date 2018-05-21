@@ -7,22 +7,22 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import org.controlsfx.validation.ValidationSupport;
 import org.controlsfx.validation.Validator;
-import runsplitter.application.Game;
+import runsplitter.application.Category;
 
 /**
  *
  */
-public class EditGameDialog {
+public class EditCategoryDialog {
 
-    public static Game showAndWait(GuiHelper guiHelper, Game gameIn) {
-        final Game game;
+    public static Category showAndWait(GuiHelper guiHelper, Category categoryIn) {
+        final Category category;
         boolean isNew;
-        if (gameIn == null) {
+        if (categoryIn == null) {
             isNew = true;
-            game = new Game();
+            category = new Category();
         } else {
             isNew = false;
-            game = gameIn;
+            category = categoryIn;
         }
 
         // Validation
@@ -30,16 +30,16 @@ public class EditGameDialog {
         // Form binding (for transferring values between bean and the form)
         MultiFormBinding multiFormBinding = new MultiFormBinding();
 
-        Node form = createForm(game, multiFormBinding, validation);
+        Node form = createForm(category, multiFormBinding, validation);
 
         // Transfer all bean values to the form
         multiFormBinding.beanToForm();
 
         String title;
         if (isNew) {
-            title = "New game";
+            title = "New category";
         } else {
-            title = String.format("Edit %s", game.getName());
+            title = String.format("Edit %s", category.getName());
         }
 
         // Show the dialog
@@ -54,14 +54,14 @@ public class EditGameDialog {
         // Transfer all values from form to bean
         multiFormBinding.formToBean();
 
-        return game;
+        return category;
     }
 
-    private static Node createForm(Game game, MultiFormBinding multiFormBinding, ValidationSupport validation) {
+    private static Node createForm(Category category, MultiFormBinding multiFormBinding, ValidationSupport validation) {
         TextField nameTextField = new TextField();
         validation.registerValidator(nameTextField, Validator.createEmptyValidator("Name is required"));
         multiFormBinding.add(FormBindings.create(
-                game::getName, game::setName,
+                category::getName, category::setName,
                 nameTextField::getText, nameTextField::setText
         ));
 

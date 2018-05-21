@@ -1,6 +1,5 @@
 package runsplitter.application.gui;
 
-import com.sun.javafx.collections.ImmutableObservableList;
 import java.io.IOException;
 import java.util.function.Supplier;
 import javafx.application.Application;
@@ -35,6 +34,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import runsplitter.application.ApplicationSettingsPersistence;
 import runsplitter.application.ApplicationState;
+import runsplitter.application.Category;
 import runsplitter.application.Game;
 import runsplitter.application.GameLibrary;
 import runsplitter.speedrun.Instant;
@@ -181,12 +181,47 @@ public class GuiApplication extends Application {
                 createControlsBox(gameAddBtn, gameRemoveBtn, gameEditBtn, gameUpBtn, gameDownBtn)
         );
 
-        ListView<String> categoryListView = new ListView<>(new ImmutableObservableList<>("Clean World 1-2 100%", "Full 100%", "World 1 100%", "World 2 100%", "World 3 100%"));
+        ListView<Category> categoryListView = new ListView<>();
+        categoryListView.setCellFactory(listView -> new ListCell<Category>() {
+            @Override
+            protected void updateItem(Category category, boolean empty) {
+                super.updateItem(category, empty);
 
-        ReadOnlyObjectProperty<String> categorySelectedItemProperty = categoryListView.getSelectionModel().selectedItemProperty();
-        Button categoryAddBtn = guiHelper.createAddButton(null, null);
-        Button categoryRemoveBtn = guiHelper.createRemoveButton(categorySelectedItemProperty, null, null);
-        Button categoryEditBtn = guiHelper.createEditButton(categorySelectedItemProperty, null);
+                if (empty || category == null || category.getName() == null) {
+                    setText(null);
+                } else {
+                    setText(category.getName());
+                }
+            }
+        });
+        // Update categories when game is changed
+        gameSelectedItemProperty.addListener((observable, oldVal, newVal) -> {
+            ObservableList<Category> observableList;
+            if (newVal == null) {
+                observableList = FXCollections.unmodifiableObservableList(FXCollections.emptyObservableList());
+            } else {
+                observableList = FXCollections.observableList(newVal.getCategoriesModifiable());
+            }
+            categoryListView.setItems(observableList);
+            categoryListView.getSelectionModel().select(0);
+        });
+
+        ReadOnlyObjectProperty<Category> categorySelectedItemProperty = categoryListView.getSelectionModel().selectedItemProperty();
+        Button categoryAddBtn = guiHelper.createAddButton(
+                () -> EditCategoryDialog.showAndWait(guiHelper, null),
+                category -> categoryListView.getItems().add(category));
+        Button categoryRemoveBtn = guiHelper.createRemoveButton(
+                categorySelectedItemProperty,
+                Category::getName,
+                category -> categoryListView.getItems().remove(category));
+        Button categoryEditBtn = guiHelper.createEditButton(
+                categorySelectedItemProperty,
+                category -> {
+                    EditCategoryDialog.showAndWait(guiHelper, category);
+                    // Refresh the view in case the name of the category was changed
+                    categoryListView.refresh();
+                }
+        );
         Button categoryUpBtn = guiHelper.createMoveUpButton(categoryListView);
         Button categoryDownBtn = guiHelper.createMoveDownButton(categoryListView);
 
