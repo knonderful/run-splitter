@@ -6,6 +6,8 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -19,6 +21,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
+import javafx.scene.control.ListView;
+import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.Tooltip;
 import javafx.stage.Stage;
 import org.controlsfx.validation.ValidationSupport;
@@ -166,36 +170,104 @@ public class GuiHelper {
         alert.showAndWait();
     }
 
-    public Button createAddButton() throws IOException {
+    public <T> Button createAddButton(Supplier<T> itemSupplier, Consumer<T> itemConsumer) throws IOException {
         Group svgImage = getSvgImage("plus.svg");
-        return createIconButton(svgImage, "Add");
+        Button button = createIconButton(svgImage, "Add");
+        button.setOnAction(event -> {
+            T item = itemSupplier.get();
+            if (item != null) {
+                itemConsumer.accept(item);
+            }
+        });
+        return button;
     }
 
-    public Button createRemoveButton(ReadOnlyObjectProperty<?> selectedItemProperty) throws IOException {
+    public <T> Button createRemoveButton(ReadOnlyObjectProperty<T> selectedItemProperty, Function<T, String> itemNameFunction, Consumer<T> itemConsumer) throws IOException {
         Group svgImage = getSvgImage("minus.svg");
         Button button = createIconButton(svgImage, "Remove");
         applyVisiblityUpdates(button, selectedItemProperty);
+        button.setOnAction(event -> {
+            T item = selectedItemProperty.get();
+            if (item == null) {
+                return;
+            }
+
+            Dialog<ButtonType> confirmationDialog = new Dialog<>();
+            confirmationDialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+            String name = itemNameFunction.apply(item);
+            confirmationDialog.setContentText(String.format("Are you sure that you want to remove '%s'?", name));
+            confirmationDialog.setTitle(String.format("Remove '%s'", name));
+            confirmationDialog.showAndWait().ifPresent(btnType -> {
+                if (btnType == ButtonType.OK) {
+                    itemConsumer.accept(item);
+                }
+            });
+        });
         return button;
     }
 
-    public Button createEditButton(ReadOnlyObjectProperty<?> selectedItemProperty) throws IOException {
+    public <T> Button createEditButton(ReadOnlyObjectProperty<T> selectedItemProperty, Consumer<T> itemConsumer) throws IOException {
         Group svgImage = getSvgImage("pencil.svg");
         Button button = createIconButton(svgImage, "Edit");
         applyVisiblityUpdates(button, selectedItemProperty);
+        button.setOnAction(event -> {
+            T item = selectedItemProperty.get();
+            if (item == null) {
+                return;
+            }
+
+            itemConsumer.accept(item);
+        });
         return button;
     }
 
-    public Button createMoveUpButton(ReadOnlyObjectProperty<?> selectedItemProperty) throws IOException {
+    public <T> Button createMoveUpButton(ListView<T> itemListView) throws IOException {
         Group svgImage = getSvgImage("arrow-top.svg");
         Button button = createIconButton(svgImage, "Move up");
+        MultipleSelectionModel<T> selectionModel = itemListView.getSelectionModel();
+        ReadOnlyObjectProperty<T> selectedItemProperty = selectionModel.selectedItemProperty();
         applyVisiblityUpdates(button, selectedItemProperty);
+        button.setOnAction(event -> {
+            T selectedItem = selectedItemProperty.get();
+            if (selectedItem == null) {
+                return;
+            }
+
+            ObservableList<T> items = itemListView.getItems();
+            int index = items.indexOf(selectedItem);
+            if (index <= 0) {
+                return;
+            }
+            items.remove(index);
+            int targetIndex = index - 1;
+            items.add(targetIndex, selectedItem);
+            selectionModel.select(targetIndex);
+        });
         return button;
     }
 
-    public Button createMoveDownButton(ReadOnlyObjectProperty<?> selectedItemProperty) throws IOException {
+    public <T> Button createMoveDownButton(ListView<T> itemListView) throws IOException {
         Group svgImage = getSvgImage("arrow-bottom.svg");
         Button button = createIconButton(svgImage, "Move down");
+        MultipleSelectionModel<T> selectionModel = itemListView.getSelectionModel();
+        ReadOnlyObjectProperty<T> selectedItemProperty = selectionModel.selectedItemProperty();
         applyVisiblityUpdates(button, selectedItemProperty);
+        button.setOnAction(event -> {
+            T selectedItem = selectedItemProperty.get();
+            if (selectedItem == null) {
+                return;
+            }
+
+            ObservableList<T> items = itemListView.getItems();
+            int index = items.indexOf(selectedItem);
+            if (index >= items.size() - 1) {
+                return;
+            }
+            items.remove(index);
+            int targetIndex = index + 1;
+            items.add(targetIndex, selectedItem);
+            selectionModel.select(targetIndex);
+        });
         return button;
     }
 

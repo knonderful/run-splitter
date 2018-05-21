@@ -14,9 +14,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -159,79 +157,24 @@ public class GuiApplication extends Application {
         });
 
         ReadOnlyObjectProperty<Game> gameSelectedItemProperty = gameListView.getSelectionModel().selectedItemProperty();
-        Button gameAddBtn = guiHelper.createAddButton();
-        gameAddBtn.setOnAction(event -> {
-            Game game = EditGameDialog.showAndWait(guiHelper, null);
-            if (game != null) {
-                gameListView.getItems().add(game);
-            }
-        });
-
-        Button gameRemoveBtn = guiHelper.createRemoveButton(gameSelectedItemProperty);
-        gameRemoveBtn.setOnAction(event -> {
-            Game game = gameSelectedItemProperty.get();
-            if (game == null) {
-                return;
-            }
-
-            Dialog<ButtonType> confirmationDialog = new Dialog<>();
-            confirmationDialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-            confirmationDialog.setContentText(String.format("Are you sure that you want to remove '%s'?", game.getName()));
-            confirmationDialog.setTitle(String.format("Remove '%s'", game.getName()));
-            confirmationDialog.showAndWait().ifPresent(btnType -> {
-                if (btnType == ButtonType.OK) {
-                    gameListView.getItems().remove(game);
+        Button gameAddBtn = guiHelper.createAddButton(
+                () -> EditGameDialog.showAndWait(guiHelper, null),
+                game -> gameListView.getItems().add(game));
+        Button gameRemoveBtn = guiHelper.createRemoveButton(
+                gameSelectedItemProperty,
+                Game::getName,
+                game -> gameListView.getItems().remove(game));
+        Button gameEditBtn = guiHelper.createEditButton(
+                gameSelectedItemProperty,
+                game -> {
+                    EditGameDialog.showAndWait(guiHelper, game);
+                    // Refresh the view in case the name of the game was changed
+                    gameListView.refresh();
                 }
-            });
-        });
+        );
+        Button gameUpBtn = guiHelper.createMoveUpButton(gameListView);
+        Button gameDownBtn = guiHelper.createMoveDownButton(gameListView);
 
-        Button gameEditBtn = guiHelper.createEditButton(gameSelectedItemProperty);
-        gameEditBtn.setOnAction(event -> {
-            Game game = gameSelectedItemProperty.get();
-            if (game == null) {
-                return;
-            }
-
-            EditGameDialog.showAndWait(guiHelper, game);
-            // Refresh the view in case the name of the game was changed
-            gameListView.refresh();
-        });
-
-        Button gameUpBtn = guiHelper.createMoveUpButton(gameSelectedItemProperty);
-        gameUpBtn.setOnAction(event -> {
-            Game game = gameSelectedItemProperty.get();
-            if (game == null) {
-                return;
-            }
-
-            ObservableList<Game> items = gameListView.getItems();
-            int index = items.indexOf(game);
-            if (index <= 0) {
-                return;
-            }
-            items.remove(index);
-            int targetIndex = index - 1;
-            items.add(targetIndex, game);
-            gameListView.getSelectionModel().select(targetIndex);
-        });
-
-        Button gameDownBtn = guiHelper.createMoveDownButton(gameSelectedItemProperty);
-        gameDownBtn.setOnAction(event -> {
-            Game game = gameSelectedItemProperty.get();
-            if (game == null) {
-                return;
-            }
-
-            ObservableList<Game> items = gameListView.getItems();
-            int index = items.indexOf(game);
-            if (index >= items.size() - 1) {
-                return;
-            }
-            items.remove(index);
-            int targetIndex = index + 1;
-            items.add(targetIndex, game);
-            gameListView.getSelectionModel().select(targetIndex);
-        });
         VBox gameBox = new VBox(
                 new Label("Game:"),
                 gameListView,
@@ -241,11 +184,11 @@ public class GuiApplication extends Application {
         ListView<String> categoryListView = new ListView<>(new ImmutableObservableList<>("Clean World 1-2 100%", "Full 100%", "World 1 100%", "World 2 100%", "World 3 100%"));
 
         ReadOnlyObjectProperty<String> categorySelectedItemProperty = categoryListView.getSelectionModel().selectedItemProperty();
-        Button categoryAddBtn = guiHelper.createAddButton();
-        Button categoryRemoveBtn = guiHelper.createRemoveButton(categorySelectedItemProperty);
-        Button categoryEditBtn = guiHelper.createEditButton(categorySelectedItemProperty);
-        Button categoryUpBtn = guiHelper.createMoveUpButton(categorySelectedItemProperty);
-        Button categoryDownBtn = guiHelper.createMoveDownButton(categorySelectedItemProperty);
+        Button categoryAddBtn = guiHelper.createAddButton(null, null);
+        Button categoryRemoveBtn = guiHelper.createRemoveButton(categorySelectedItemProperty, null, null);
+        Button categoryEditBtn = guiHelper.createEditButton(categorySelectedItemProperty, null);
+        Button categoryUpBtn = guiHelper.createMoveUpButton(categoryListView);
+        Button categoryDownBtn = guiHelper.createMoveDownButton(categoryListView);
 
         VBox categoryBox = new VBox(
                 new Label("Category:"),
@@ -267,9 +210,9 @@ public class GuiApplication extends Application {
         runsItems.add(new RunEntry(new Instant(621878L), "W1_First_try.mkv"));
 
         ReadOnlyObjectProperty<RunEntry> runsSelectedItemProperty = runsTableView.getSelectionModel().selectedItemProperty();
-        Button runsAddBtn = guiHelper.createAddButton();
-        Button runsRemoveBtn = guiHelper.createRemoveButton(runsSelectedItemProperty);
-        Button runsEditBtn = guiHelper.createEditButton(runsSelectedItemProperty);
+        Button runsAddBtn = guiHelper.createAddButton(null, null);
+        Button runsRemoveBtn = guiHelper.createRemoveButton(runsSelectedItemProperty, null, null);
+        Button runsEditBtn = guiHelper.createEditButton(runsSelectedItemProperty, null);
 
         VBox runsBox = new VBox(
                 new Label("Runs:"),
