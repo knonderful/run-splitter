@@ -37,6 +37,7 @@ import runsplitter.application.ApplicationState;
 import runsplitter.application.Category;
 import runsplitter.application.Game;
 import runsplitter.application.GameLibrary;
+import runsplitter.application.GameLibraryPersistence;
 import runsplitter.speedrun.Instant;
 
 /**
@@ -51,7 +52,7 @@ public class GuiApplication extends Application {
         // TODO: Catch loading issues and show an error message in the GUI or something...
         ApplicationState state = new ApplicationState(
                 ApplicationSettingsPersistence.load(),
-                new GameLibrary() // TODO: load
+                GameLibraryPersistence.load()
         );
         Supplier<ApplicationState> stateSupplier = () -> state;
 
@@ -282,7 +283,12 @@ public class GuiApplication extends Application {
         // File menu
         MenuItem fileQuit = new MenuItem("Quit");
         fileQuit.setOnAction(evt -> primaryStage.close());
-        Menu fileMenu = new Menu("File", null, fileQuit);
+        MenuItem fileSave = new MenuItem("Save");
+        fileSave.setOnAction(evt -> {
+            GameLibrary library = stateSupplier.get().getLibrary();
+            GuiHelper.handleException(() -> GameLibraryPersistence.save(library));
+        });
+        Menu fileMenu = new Menu("File", null, fileQuit, fileSave);
 
         // Tools menu
         MenuItem toolsSettings = new MenuItem("Settings...");
