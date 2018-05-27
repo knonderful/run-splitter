@@ -171,8 +171,15 @@ public class GuiHelper {
     }
 
     public <T> Button createAddButton(Supplier<T> itemSupplier, Consumer<T> itemConsumer) throws IOException {
+        return createAddButton(itemSupplier, itemConsumer, null);
+    }
+
+    public <T> Button createAddButton(Supplier<T> itemSupplier, Consumer<T> itemConsumer, ReadOnlyObjectProperty<?> parentObjectSelectedItemProperty) throws IOException {
         Group svgImage = getSvgImage("plus.svg");
         Button button = createIconButton(svgImage, "Add");
+        if (parentObjectSelectedItemProperty != null) {
+            applyVisiblityUpdates(button, parentObjectSelectedItemProperty);
+        }
         button.setOnAction(event -> {
             T item = itemSupplier.get();
             if (item != null) {

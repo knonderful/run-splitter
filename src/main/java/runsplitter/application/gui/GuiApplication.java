@@ -210,7 +210,8 @@ public class GuiApplication extends Application {
         ReadOnlyObjectProperty<Category> categorySelectedItemProperty = categoryListView.getSelectionModel().selectedItemProperty();
         Button categoryAddBtn = guiHelper.createAddButton(
                 () -> EditCategoryDialog.showAndWait(guiHelper, null),
-                category -> categoryListView.getItems().add(category));
+                category -> categoryListView.getItems().add(category),
+                gameSelectedItemProperty);
         Button categoryRemoveBtn = guiHelper.createRemoveButton(
                 categorySelectedItemProperty,
                 Category::getName,
