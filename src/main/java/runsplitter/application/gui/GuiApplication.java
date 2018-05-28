@@ -282,14 +282,14 @@ public class GuiApplication extends Application {
 
     private static Node createMenuPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage) {
         // File menu
-        MenuItem fileQuit = new MenuItem("Quit");
-        fileQuit.setOnAction(evt -> primaryStage.close());
         MenuItem fileSave = new MenuItem("Save");
         fileSave.setOnAction(evt -> {
             GameLibrary library = stateSupplier.get().getLibrary();
             GuiHelper.handleException(() -> GameLibraryPersistence.save(library));
         });
-        Menu fileMenu = new Menu("File", null, fileQuit, fileSave);
+        MenuItem fileQuit = new MenuItem("Quit");
+        fileQuit.setOnAction(evt -> primaryStage.close());
+        Menu fileMenu = new Menu("File", null, fileSave, fileQuit);
 
         // Tools menu
         MenuItem toolsSettings = new MenuItem("Settings...");
