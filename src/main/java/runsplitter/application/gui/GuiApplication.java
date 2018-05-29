@@ -1,6 +1,6 @@
 package runsplitter.application.gui;
 
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.function.Supplier;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -32,6 +32,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import runsplitter.YoshisIslandAnalyzer;
 import runsplitter.application.ApplicationSettingsPersistence;
 import runsplitter.application.ApplicationState;
 import runsplitter.application.Category;
@@ -52,7 +53,8 @@ public class GuiApplication extends Application {
         // TODO: Catch loading issues and show an error message in the GUI or something...
         ApplicationState state = new ApplicationState(
                 ApplicationSettingsPersistence.load(),
-                GameLibraryPersistence.load()
+                GameLibraryPersistence.load(),
+                Arrays.asList(new YoshisIslandAnalyzer())
         );
         Supplier<ApplicationState> stateSupplier = () -> state;
 
@@ -140,7 +142,7 @@ public class GuiApplication extends Application {
         return centerBox;
     }
 
-    private static Node createRunSelectionPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier) throws IOException {
+    private static Node createRunSelectionPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier) {
         GameLibrary library = stateSupplier.get().getLibrary();
 
         ListView<Game> gameListView = new ListView<>(FXCollections.observableList(library.getGamesModifiable()));
@@ -179,7 +181,7 @@ public class GuiApplication extends Application {
         VBox gameBox = new VBox(
                 new Label("Game:"),
                 gameListView,
-                createControlsBox(gameAddBtn, gameRemoveBtn, gameEditBtn, gameUpBtn, gameDownBtn)
+                GuiHelper.createControlsBox(gameAddBtn, gameRemoveBtn, gameEditBtn, gameUpBtn, gameDownBtn)
         );
 
         ListView<Category> categoryListView = new ListView<>();
@@ -209,7 +211,7 @@ public class GuiApplication extends Application {
 
         ReadOnlyObjectProperty<Category> categorySelectedItemProperty = categoryListView.getSelectionModel().selectedItemProperty();
         Button categoryAddBtn = guiHelper.createAddButton(
-                () -> EditCategoryDialog.showAndWait(guiHelper, null),
+                () -> EditCategoryDialog.showAndWait(guiHelper, null, stateSupplier.get().getAnalyzers()),
                 category -> categoryListView.getItems().add(category),
                 gameSelectedItemProperty);
         Button categoryRemoveBtn = guiHelper.createRemoveButton(
@@ -219,7 +221,7 @@ public class GuiApplication extends Application {
         Button categoryEditBtn = guiHelper.createEditButton(
                 categorySelectedItemProperty,
                 category -> {
-                    EditCategoryDialog.showAndWait(guiHelper, category);
+                    EditCategoryDialog.showAndWait(guiHelper, category, stateSupplier.get().getAnalyzers());
                     // Refresh the view in case the name of the category was changed
                     categoryListView.refresh();
                 }
@@ -230,7 +232,7 @@ public class GuiApplication extends Application {
         VBox categoryBox = new VBox(
                 new Label("Category:"),
                 categoryListView,
-                createControlsBox(categoryAddBtn, categoryRemoveBtn, categoryEditBtn, categoryUpBtn, categoryDownBtn)
+                GuiHelper.createControlsBox(categoryAddBtn, categoryRemoveBtn, categoryEditBtn, categoryUpBtn, categoryDownBtn)
         );
 
         TableColumn<RunEntry, String> runsTimeCol = new TableColumn<>("Total time");
@@ -254,7 +256,7 @@ public class GuiApplication extends Application {
         VBox runsBox = new VBox(
                 new Label("Runs:"),
                 runsTableView,
-                createControlsBox(runsAddBtn, runsRemoveBtn, runsEditBtn)
+                GuiHelper.createControlsBox(runsAddBtn, runsRemoveBtn, runsEditBtn)
         );
 
         StackPane analyzeControlsSeparator = new StackPane(new Separator());
@@ -263,14 +265,6 @@ public class GuiApplication extends Application {
         VBox leftVBox = new VBox(gameBox, categoryBox, runsBox);
         leftVBox.setPadding(new Insets(2));
         return leftVBox;
-    }
-
-    private static Node createControlsBox(Button... buttons) {
-        HBox gameControlsBox = new HBox(buttons);
-        gameControlsBox.setAlignment(Pos.TOP_RIGHT);
-        gameControlsBox.setPadding(new Insets(1, 0, 1, 0));
-        gameControlsBox.setSpacing(2);
-        return gameControlsBox;
     }
 
     private static void showSettings(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage) {

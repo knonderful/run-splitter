@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -23,7 +25,9 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
+import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import org.controlsfx.validation.ValidationSupport;
 import runsplitter.application.GuiTheme;
@@ -170,11 +174,11 @@ public class GuiHelper {
         alert.showAndWait();
     }
 
-    public <T> Button createAddButton(Supplier<T> itemSupplier, Consumer<T> itemConsumer) throws IOException {
+    public <T> Button createAddButton(Supplier<T> itemSupplier, Consumer<T> itemConsumer) {
         return createAddButton(itemSupplier, itemConsumer, null);
     }
 
-    public <T> Button createAddButton(Supplier<T> itemSupplier, Consumer<T> itemConsumer, ReadOnlyObjectProperty<?> parentObjectSelectedItemProperty) throws IOException {
+    public <T> Button createAddButton(Supplier<T> itemSupplier, Consumer<T> itemConsumer, ReadOnlyObjectProperty<?> parentObjectSelectedItemProperty) {
         Group svgImage = getSvgImage("plus.svg");
         Button button = createIconButton(svgImage, "Add");
         if (parentObjectSelectedItemProperty != null) {
@@ -189,7 +193,7 @@ public class GuiHelper {
         return button;
     }
 
-    public <T> Button createRemoveButton(ReadOnlyObjectProperty<T> selectedItemProperty, Function<T, String> itemNameFunction, Consumer<T> itemConsumer) throws IOException {
+    public <T> Button createRemoveButton(ReadOnlyObjectProperty<T> selectedItemProperty, Function<T, String> itemNameFunction, Consumer<T> itemConsumer) {
         Group svgImage = getSvgImage("minus.svg");
         Button button = createIconButton(svgImage, "Remove");
         applyVisiblityUpdates(button, selectedItemProperty);
@@ -202,8 +206,17 @@ public class GuiHelper {
             Dialog<ButtonType> confirmationDialog = new Dialog<>();
             confirmationDialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
             String name = itemNameFunction.apply(item);
-            confirmationDialog.setContentText(String.format("Are you sure that you want to remove '%s'?", name));
-            confirmationDialog.setTitle(String.format("Remove '%s'", name));
+            String contentText;
+            String title;
+            if (name == null || name.isEmpty()) {
+                contentText = "Are you sure that you want to remove the selected item?";
+                title = "Remove item";
+            } else {
+                contentText = String.format("Are you sure that you want to remove '%s'?", name);
+                title = String.format("Remove '%s'", name);
+            }
+            confirmationDialog.setContentText(contentText);
+            confirmationDialog.setTitle(title);
             confirmationDialog.showAndWait().ifPresent(btnType -> {
                 if (btnType == ButtonType.OK) {
                     itemConsumer.accept(item);
@@ -213,7 +226,7 @@ public class GuiHelper {
         return button;
     }
 
-    public <T> Button createEditButton(ReadOnlyObjectProperty<T> selectedItemProperty, Consumer<T> itemConsumer) throws IOException {
+    public <T> Button createEditButton(ReadOnlyObjectProperty<T> selectedItemProperty, Consumer<T> itemConsumer) {
         Group svgImage = getSvgImage("pencil.svg");
         Button button = createIconButton(svgImage, "Edit");
         applyVisiblityUpdates(button, selectedItemProperty);
@@ -228,10 +241,18 @@ public class GuiHelper {
         return button;
     }
 
-    public <T> Button createMoveUpButton(ListView<T> itemListView) throws IOException {
+    public <T> Button createMoveUpButton(ListView<T> itemListView) {
+        return createMoveUpButton(itemListView::getSelectionModel, itemListView::getItems);
+    }
+
+    public <T> Button createMoveUpButton(TableView<T> itemListView) {
+        return createMoveUpButton(itemListView::getSelectionModel, itemListView::getItems);
+    }
+
+    public <T> Button createMoveUpButton(Supplier<MultipleSelectionModel<T>> selectionModelSupplier, Supplier<ObservableList<T>> itemsSupplier) {
         Group svgImage = getSvgImage("arrow-top.svg");
         Button button = createIconButton(svgImage, "Move up");
-        MultipleSelectionModel<T> selectionModel = itemListView.getSelectionModel();
+        MultipleSelectionModel<T> selectionModel = selectionModelSupplier.get();
         ReadOnlyObjectProperty<T> selectedItemProperty = selectionModel.selectedItemProperty();
         applyVisiblityUpdates(button, selectedItemProperty);
         button.setOnAction(event -> {
@@ -240,7 +261,7 @@ public class GuiHelper {
                 return;
             }
 
-            ObservableList<T> items = itemListView.getItems();
+            ObservableList<T> items = itemsSupplier.get();
             int index = items.indexOf(selectedItem);
             if (index <= 0) {
                 return;
@@ -253,10 +274,18 @@ public class GuiHelper {
         return button;
     }
 
-    public <T> Button createMoveDownButton(ListView<T> itemListView) throws IOException {
+    public <T> Button createMoveDownButton(ListView<T> itemListView) {
+        return createMoveDownButton(itemListView::getSelectionModel, itemListView::getItems);
+    }
+
+    public <T> Button createMoveDownButton(TableView<T> itemListView) {
+        return createMoveDownButton(itemListView::getSelectionModel, itemListView::getItems);
+    }
+
+    public <T> Button createMoveDownButton(Supplier<MultipleSelectionModel<T>> selectionModelSupplier, Supplier<ObservableList<T>> itemsSupplier) {
         Group svgImage = getSvgImage("arrow-bottom.svg");
         Button button = createIconButton(svgImage, "Move down");
-        MultipleSelectionModel<T> selectionModel = itemListView.getSelectionModel();
+        MultipleSelectionModel<T> selectionModel = selectionModelSupplier.get();
         ReadOnlyObjectProperty<T> selectedItemProperty = selectionModel.selectedItemProperty();
         applyVisiblityUpdates(button, selectedItemProperty);
         button.setOnAction(event -> {
@@ -265,7 +294,7 @@ public class GuiHelper {
                 return;
             }
 
-            ObservableList<T> items = itemListView.getItems();
+            ObservableList<T> items = itemsSupplier.get();
             int index = items.indexOf(selectedItem);
             if (index >= items.size() - 1) {
                 return;
@@ -276,6 +305,14 @@ public class GuiHelper {
             selectionModel.select(targetIndex);
         });
         return button;
+    }
+
+    public static Node createControlsBox(Button... buttons) {
+        HBox gameControlsBox = new HBox(buttons);
+        gameControlsBox.setAlignment(Pos.TOP_RIGHT);
+        gameControlsBox.setPadding(new Insets(1, 0, 1, 0));
+        gameControlsBox.setSpacing(2);
+        return gameControlsBox;
     }
 
     private static void applyVisiblityUpdates(Button button, ReadOnlyObjectProperty<?> selectedItemProperty) {
@@ -296,7 +333,7 @@ public class GuiHelper {
         return button;
     }
 
-    private Group getSvgImage(String resourceName) throws IOException {
+    private Group getSvgImage(String resourceName) {
         try (InputStream svgFile = getResource(resourceName)) {
             SvgLoader loader = new SvgLoader();
             Group svgImage = loader.loadSvg(svgFile);
@@ -304,6 +341,9 @@ public class GuiHelper {
                 throw new IOException(String.format("Resource %s could not be loaded.", resourceName));
             }
             return svgImage;
+        } catch (IOException e) {
+            // This can only happen in case the application is bugged, so let's wrap it into a run-time exception
+            throw new RuntimeException(e);
         }
     }
 
