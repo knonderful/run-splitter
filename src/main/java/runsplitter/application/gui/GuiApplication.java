@@ -1,7 +1,12 @@
 package runsplitter.application.gui;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -13,7 +18,9 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -46,6 +53,7 @@ import runsplitter.speedrun.Instant;
  */
 public class GuiApplication extends Application {
 
+    private static final Logger LOG = Logger.getLogger(GuiApplication.class.getName());
     private static final String APPLICATION_TITLE = "Run splitter";
 
     @Override
@@ -58,6 +66,8 @@ public class GuiApplication extends Application {
         );
         Supplier<ApplicationState> stateSupplier = () -> state;
 
+        AtomicReference<GameLibrary> lastSavedLibrary = new AtomicReference<>(GameLibraryPersistence.load());
+
         GuiHelper guiHelper = new GuiHelper(state.getSettings().getTheme());
 
         // Exit the application if all windows are closed
@@ -67,7 +77,7 @@ public class GuiApplication extends Application {
 
         BorderPane mainPane = new BorderPane(
                 splitPane, // center
-                createMenuPane(guiHelper, stateSupplier, primaryStage), // top
+                createMenuPane(guiHelper, stateSupplier, primaryStage, lastSavedLibrary::set), // top
                 null, // right
                 null, // bottom
                 null // left
@@ -75,6 +85,24 @@ public class GuiApplication extends Application {
 
         guiHelper.initializeScene(new Scene(mainPane, 640, 480), primaryStage);
         primaryStage.setTitle(APPLICATION_TITLE);
+        primaryStage.setOnCloseRequest(evt -> {
+            GameLibrary library = stateSupplier.get().getLibrary();
+            if (!library.equals(lastSavedLibrary.get())) {
+                Dialog<ButtonType> confirmationDialog = new Dialog<>();
+                confirmationDialog.getDialogPane().getButtonTypes().addAll(ButtonType.YES, ButtonType.NO);
+                confirmationDialog.setContentText("Do you want to save the changes to the game library?");
+                confirmationDialog.setTitle("Save changes");
+                confirmationDialog.showAndWait().ifPresent(btnType -> {
+                    if (btnType == ButtonType.YES) {
+                        try {
+                            GameLibraryPersistence.save(library);
+                        } catch (IOException e) {
+                            LOG.log(Level.SEVERE, "Could not save game library.", e);
+                        }
+                    }
+                });
+            }
+        });
         primaryStage.show();
     }
 
@@ -274,12 +302,17 @@ public class GuiApplication extends Application {
         settingsWindow.show();
     }
 
-    private static Node createMenuPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage) {
+    private static Node createMenuPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage, Consumer<GameLibrary> libraryCopyConsumer) {
         // File menu
         MenuItem fileSave = new MenuItem("Save");
         fileSave.setOnAction(evt -> {
             GameLibrary library = stateSupplier.get().getLibrary();
             GuiHelper.handleException(() -> GameLibraryPersistence.save(library));
+            try {
+                libraryCopyConsumer.accept(GameLibraryPersistence.load());
+            } catch (IOException e) {
+                LOG.log(Level.SEVERE, "Could not load game library.", e);
+            }
         });
         MenuItem fileQuit = new MenuItem("Quit");
         fileQuit.setOnAction(evt -> primaryStage.close());
