@@ -10,8 +10,8 @@ import runsplitter.application.GameLibrary;
  */
 public class GameLibraryJson {
 
-    public static void toJson(GameLibrary settings, Appendable appendable) {
-        createGson().toJson(settings, appendable);
+    public static void toJson(GameLibrary library, Appendable appendable) {
+        createGson().toJson(library, appendable);
     }
 
     public static GameLibrary fromJson(Reader reader) {
