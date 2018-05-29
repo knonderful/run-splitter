@@ -6,6 +6,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.Collection;
+import java.util.function.Supplier;
+import runsplitter.VideoAnalyzer;
 import runsplitter.application.json.GameLibraryJson;
 
 /**
@@ -13,7 +16,10 @@ import runsplitter.application.json.GameLibraryJson;
  */
 public class GameLibraryPersistence {
 
-    private GameLibraryPersistence() {
+    private final GameLibraryJson json;
+    
+    public GameLibraryPersistence(Supplier<Collection<VideoAnalyzer>> videoAnalyzersSupplier) {
+        this.json = new GameLibraryJson(videoAnalyzersSupplier);
     }
 
     /**
@@ -22,13 +28,13 @@ public class GameLibraryPersistence {
      * @return The {@link GameLibrary}.
      * @throws IOException If the {@link GameLibrary} could not be loaded.
      */
-    public static GameLibrary load() throws IOException {
+    public GameLibrary load() throws IOException {
         File libraryFile = getLibraryFile();
         if (!libraryFile.exists()) {
             return new GameLibrary();
         }
         try (Reader reader = new FileReader(libraryFile)) {
-            return GameLibraryJson.fromJson(reader);
+            return json.fromJson(reader);
         }
     }
 
@@ -38,9 +44,9 @@ public class GameLibraryPersistence {
      * @param library The {@link GameLibrary}.
      * @throws IOException If the {@link GameLibrary} could not be saved.
      */
-    public static void save(GameLibrary library) throws IOException {
+    public void save(GameLibrary library) throws IOException {
         try (Writer writer = new FileWriter(getLibraryFile())) {
-            GameLibraryJson.toJson(library, writer);
+            json.toJson(library, writer);
         }
     }
 

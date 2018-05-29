@@ -2,6 +2,7 @@ package runsplitter.application.gui;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -39,6 +40,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import runsplitter.VideoAnalyzer;
 import runsplitter.YoshisIslandAnalyzer;
 import runsplitter.application.ApplicationSettingsPersistence;
 import runsplitter.application.ApplicationState;
@@ -59,14 +61,18 @@ public class GuiApplication extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         // TODO: Catch loading issues and show an error message in the GUI or something...
+        List<VideoAnalyzer> analyzers = Arrays.asList(new YoshisIslandAnalyzer());
+        GameLibraryPersistence libraryPersistence = new GameLibraryPersistence(() -> analyzers);
+        Supplier<GameLibraryPersistence> libraryPersistenceSupplier = () -> libraryPersistence;
+
         ApplicationState state = new ApplicationState(
                 ApplicationSettingsPersistence.load(),
-                GameLibraryPersistence.load(),
-                Arrays.asList(new YoshisIslandAnalyzer())
-        );
+                libraryPersistence.load(),
+                analyzers);
+        
         Supplier<ApplicationState> stateSupplier = () -> state;
 
-        AtomicReference<GameLibrary> lastSavedLibrary = new AtomicReference<>(GameLibraryPersistence.load());
+        AtomicReference<GameLibrary> lastSavedLibrary = new AtomicReference<>(libraryPersistence.load());
 
         GuiHelper guiHelper = new GuiHelper(state.getSettings().getTheme());
 
@@ -77,7 +83,7 @@ public class GuiApplication extends Application {
 
         BorderPane mainPane = new BorderPane(
                 splitPane, // center
-                createMenuPane(guiHelper, stateSupplier, primaryStage, lastSavedLibrary::set), // top
+                createMenuPane(guiHelper, stateSupplier, primaryStage, libraryPersistenceSupplier, lastSavedLibrary::set), // top
                 null, // right
                 null, // bottom
                 null // left
@@ -95,7 +101,7 @@ public class GuiApplication extends Application {
                 confirmationDialog.showAndWait().ifPresent(btnType -> {
                     if (btnType == ButtonType.YES) {
                         try {
-                            GameLibraryPersistence.save(library);
+                            libraryPersistenceSupplier.get().save(library);
                         } catch (IOException e) {
                             LOG.log(Level.SEVERE, "Could not save game library.", e);
                         }
@@ -302,14 +308,15 @@ public class GuiApplication extends Application {
         settingsWindow.show();
     }
 
-    private static Node createMenuPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage, Consumer<GameLibrary> libraryCopyConsumer) {
+    private static Node createMenuPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage, Supplier<GameLibraryPersistence> libraryPersistenceSupplier, Consumer<GameLibrary> libraryCopyConsumer) {
         // File menu
         MenuItem fileSave = new MenuItem("Save");
         fileSave.setOnAction(evt -> {
             GameLibrary library = stateSupplier.get().getLibrary();
-            GuiHelper.handleException(() -> GameLibraryPersistence.save(library));
+            GameLibraryPersistence libraryPersistence = libraryPersistenceSupplier.get();
+            GuiHelper.handleException(() -> libraryPersistence.save(library));
             try {
-                libraryCopyConsumer.accept(GameLibraryPersistence.load());
+                libraryCopyConsumer.accept(libraryPersistence.load());
             } catch (IOException e) {
                 LOG.log(Level.SEVERE, "Could not load game library.", e);
             }
