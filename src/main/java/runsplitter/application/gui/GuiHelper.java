@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.ObservableList;
@@ -38,6 +40,7 @@ import runsplitter.common.Thrower;
  */
 public class GuiHelper {
 
+    private static final Logger LOG = Logger.getLogger(GuiHelper.class.getName());
     private final Collection<Supplier<ObservableList<String>>> stylesheetListSuppliers = new HashSet<>(4);
     private List<String> defaultStylesheets;
     private GuiTheme currentTheme;
@@ -160,6 +163,8 @@ public class GuiHelper {
     }
 
     public static void popupError(String message, Throwable error) {
+        LOG.log(Level.SEVERE, message, error);
+
         String msg;
         if (message == null) {
             msg = error.getMessage();
