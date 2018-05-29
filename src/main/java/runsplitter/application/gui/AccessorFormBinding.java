@@ -4,6 +4,8 @@ import runsplitter.common.Accessor;
 
 /**
  * A {@link FormBinding} that uses {@link Accessor}s for transferring values between bean and form.
+ *
+ * @param <T> The type of data to bind.
  */
 public class AccessorFormBinding<T> implements FormBinding {
 
