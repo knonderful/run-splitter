@@ -1,25 +1,28 @@
 package runsplitter.speedrun;
 
-import java.util.List;
-
 /**
- * A speed run.
+ * Analysis of a speed run medium (e.g. a video file).
  */
 public interface Speedrun {
 
     /**
-     * Retrieves all split times.
+     * Retrieves the name of the source that is used for the analysis.
      *
-     * @return A list of split times.
+     * @return
      */
-    List<Instant> getSplits();
+    String getSourceName();
 
     /**
-     * Retrieves the final time.
-     * <p>
-     * This is equivalent to last element from {@link #getSplits()}.
+     * Retrieves the start time of the run in the source material.
      *
-     * @return The final time.
+     * @return
      */
-    Instant getFinalSplit();
+    Instant getStart();
+
+    /**
+     * Retrieves the {@link RunMarkers}.
+     *
+     * @return The {@link RunMarkers}.
+     */
+    RunMarkers getMarkers();
 }

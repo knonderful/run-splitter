@@ -1,6 +1,6 @@
 package runsplitter;
 
-import runsplitter.speedrun.MutableAnalysis;
+import runsplitter.speedrun.MutableSpeedrun;
 
 /**
  * A video analyzer can be used to analyze a speed run video for split detection.
@@ -24,8 +24,8 @@ public interface VideoAnalyzer {
     /**
      * Creates the {@link VideoFrameHandler} that will handle input frames.
      *
-     * @param analysis The {@link MutableAnalysis} to which the run should be applied.
+     * @param run The {@link MutableSpeedrun} to which the results should be applied.
      * @return The {@link VideoFrameHandler}.
      */
-    VideoFrameHandler createFrameHandler(MutableAnalysis analysis);
+    VideoFrameHandler createFrameHandler(MutableSpeedrun run);
 }

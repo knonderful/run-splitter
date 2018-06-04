@@ -9,19 +9,19 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.Collection;
 import runsplitter.speedrun.Instant;
-import runsplitter.speedrun.Analysis;
+import runsplitter.speedrun.Speedrun;
 
 /**
  *
  */
 public class JsonConverter {
 
-    public static void toJson(Collection<Analysis> analyses, Appendable appendable) {
-        createGson().toJson(AnalysesGson.toGson(analyses), appendable);
+    public static void toJson(Collection<Speedrun> analyses, Appendable appendable) {
+        createGson().toJson(SpeedrunsGson.toGson(analyses), appendable);
     }
 
-    public static Collection<Analysis> fromJson(Reader reader) {
-        AnalysesGson set = createGson().fromJson(reader, AnalysesGson.class);
+    public static Collection<Speedrun> fromJson(Reader reader) {
+        SpeedrunsGson set = createGson().fromJson(reader, SpeedrunsGson.class);
         return set.fromGson();
     }
 

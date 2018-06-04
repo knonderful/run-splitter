@@ -1,8 +1,5 @@
 package runsplitter.speedrun;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -10,39 +7,49 @@ import java.util.Objects;
  */
 public class MutableSpeedrun implements Speedrun {
 
-    private final LinkedList<Instant> splits = new LinkedList<>();
+    private final String sourceName;
+    private final MutableMarkers markers;
+    private Instant start;
 
     /**
-     * Adds a split time.
+     * Creates a new instance.
      *
-     * @param instant The (absolute) time.
+     * @param sourceName The name of the source.
      */
-    public void addSplit(Instant instant) {
-        splits.add(instant);
+    public MutableSpeedrun(String sourceName) {
+        this(sourceName, new Instant(0), new MutableMarkers());
     }
 
     /**
-     * Removes the last split time.
+     * Creates a new instance.
      *
-     * @return The split time that was removed or {@code null} if no split time was found.
+     * @param sourceName The name of the source.
+     * @param start      The time in the source file where the speed run starts.
+     * @param markers    The {@link MutableMarkers}.
      */
-    public Instant removeLastSplit() {
-        if (splits.isEmpty()) {
-            return null;
-        }
-        return splits.removeLast();
+    public MutableSpeedrun(String sourceName, Instant start, MutableMarkers markers) {
+        this.sourceName = sourceName;
+        this.start = start;
+        this.markers = markers;
     }
 
     @Override
-    public int hashCode() {
-        int hash = 5;
-        hash = 29 * hash + Objects.hashCode(this.splits);
-        return hash;
+    public String getSourceName() {
+        return sourceName;
     }
 
     @Override
     public String toString() {
-        return "MutableSpeedrun{" + "splits=" + splits + '}';
+        return "MutableAnalysis{" + "sourceName=" + sourceName + ", markers=" + markers + ", start=" + start + '}';
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 83 * hash + Objects.hashCode(this.sourceName);
+        hash = 83 * hash + Objects.hashCode(this.markers);
+        hash = 83 * hash + Objects.hashCode(this.start);
+        return hash;
     }
 
     @Override
@@ -57,20 +64,31 @@ public class MutableSpeedrun implements Speedrun {
             return false;
         }
         final MutableSpeedrun other = (MutableSpeedrun) obj;
-        return Objects.equals(this.splits, other.splits);
-    }
-
-    @Override
-    public List<Instant> getSplits() {
-        return Collections.unmodifiableList(splits);
-    }
-
-    @Override
-    public Instant getFinalSplit() {
-        if (splits.isEmpty()) {
-            return null;
+        if (!Objects.equals(this.sourceName, other.sourceName)) {
+            return false;
         }
-        return splits.peekLast();
+        if (!Objects.equals(this.markers, other.markers)) {
+            return false;
+        }
+        return Objects.equals(this.start, other.start);
     }
 
+    /**
+     * Sets the time in the source file where the speed run starts.
+     *
+     * @param start The time in the source file where the speed run starts.
+     */
+    public void setStart(Instant start) {
+        this.start = start;
+    }
+
+    @Override
+    public Instant getStart() {
+        return start;
+    }
+
+    @Override
+    public MutableMarkers getMarkers() {
+        return markers;
+    }
 }

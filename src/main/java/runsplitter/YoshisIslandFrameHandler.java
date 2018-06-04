@@ -2,7 +2,7 @@ package runsplitter;
 
 import java.awt.image.BufferedImage;
 import runsplitter.speedrun.Instant;
-import runsplitter.speedrun.MutableAnalysis;
+import runsplitter.speedrun.MutableSpeedrun;
 
 /**
  * A {@link VideoFrameHandler} for analyzing Yoshi's Island speed run videos.
@@ -21,7 +21,7 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
      */
     private static final int RUN_START_OFFSET = (132 * 1000) / 60;
 
-    private final MutableAnalysis analysis;
+    private final MutableSpeedrun run;
     private final boolean drawDebug;
 
     private boolean inBlackScreen;
@@ -34,11 +34,11 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
     /**
      * Creates a new instance.
      *
-     * @param analysis  The {@link MutableAnalysis}.
+     * @param run  The {@link MutableSpeedrun}.
      * @param drawDebug A flag that specifies whether debug artifacts should be drawn.
      */
-    public YoshisIslandFrameHandler(MutableAnalysis analysis, boolean drawDebug) {
-        this.analysis = analysis;
+    public YoshisIslandFrameHandler(MutableSpeedrun run, boolean drawDebug) {
+        this.run = run;
         this.drawDebug = drawDebug;
     }
 
@@ -73,7 +73,7 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
         if (frameIsBlackScreen(image, drawDebug)) {
             if (runStartTimestamp < 0) {
                 runStartTimestamp = timeStamp - RUN_START_OFFSET;
-                analysis.setStart(new Instant(runStartTimestamp));
+                run.setStart(new Instant(runStartTimestamp));
                 System.out.printf("%s - Start%n", formatTimestamp(runStartTimestamp));
             }
             if (!inBlackScreen) {
@@ -97,7 +97,7 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
                 }
 
                 System.out.printf("%s - %s Level %d completed%n", formatTimestamp(lastBlackScreen), formatTimestamp(splitTime), currentLevelNumber);
-                analysis.getSpeedrun().addSplit(new Instant(lastBlackScreen - runStartTimestamp));
+                run.getMarkers().addSplit(new Instant(lastBlackScreen - runStartTimestamp));
 
                 lastSplit = lastBlackScreen;
                 currentLevelNumber++;

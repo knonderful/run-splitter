@@ -1,6 +1,5 @@
 package runsplitter;
 
-import runsplitter.application.gui.GuiApplication;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,8 +9,9 @@ import java.util.Collection;
 import java.util.Collections;
 import javafx.application.Application;
 import runsplitter.analyze.VideoAnalyzer;
-import runsplitter.speedrun.Analysis;
-import runsplitter.speedrun.MutableAnalysis;
+import runsplitter.application.gui.GuiApplication;
+import runsplitter.speedrun.MutableSpeedrun;
+import runsplitter.speedrun.Speedrun;
 import runsplitter.speedrun.gson.JsonConverter;
 
 /**
@@ -25,8 +25,8 @@ public class Main {
 //        String filename = "YI_Clean_W12_100_PB_44_21_80.mkv";
 
         WindowFrameHandler windowFrameHandler = new WindowFrameHandler(false);
-        MutableAnalysis analysis = new MutableAnalysis(filename);
-        YoshisIslandFrameHandler yiFrameHandler = new YoshisIslandFrameHandler(analysis, false);
+        MutableSpeedrun run = new MutableSpeedrun(filename);
+        YoshisIslandFrameHandler yiFrameHandler = new YoshisIslandFrameHandler(run, false);
 
         VideoFrameHandlerChain handlerChain = new VideoFrameHandlerChain(yiFrameHandler, windowFrameHandler);
         VideoAnalyzer analyzer = new VideoAnalyzer(handlerChain);
@@ -35,12 +35,12 @@ public class Main {
 
         // Write to JSON
         try (Writer writer = new FileWriter("analysis_data.json", false)) {
-            JsonConverter.toJson(Collections.singletonList(analysis), writer);
+            JsonConverter.toJson(Collections.singletonList(run), writer);
         }
 
         // Read from JSON
         try (Reader reader = new FileReader("analysis_data.json")) {
-            Collection<Analysis> records = JsonConverter.fromJson(reader);
+            Collection<Speedrun> records = JsonConverter.fromJson(reader);
             records.forEach(System.out::println);
         }
 

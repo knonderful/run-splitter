@@ -1,7 +1,5 @@
 package runsplitter.speedrun.gson;
 
-import java.util.ArrayList;
-import java.util.List;
 import runsplitter.speedrun.Instant;
 import runsplitter.speedrun.MutableSpeedrun;
 import runsplitter.speedrun.Speedrun;
@@ -11,10 +9,14 @@ import runsplitter.speedrun.Speedrun;
  */
 class SpeedrunGson {
 
-    private final List<Instant> splits;
+    private final String sourceName;
+    private final Instant start;
+    private final RunMarkersGson markers;
 
-    private SpeedrunGson(List<Instant> splits) {
-        this.splits = new ArrayList<>(splits);
+    private SpeedrunGson(String sourceName, RunMarkersGson markers, Instant start) {
+        this.sourceName = sourceName;
+        this.markers = markers;
+        this.start = start;
     }
 
     /**
@@ -23,8 +25,8 @@ class SpeedrunGson {
      * @param analysis The {@link Speedrun}.
      * @return The {@link SpeedrunGson}.
      */
-    static SpeedrunGson toGson(Speedrun speedrun) {
-        return new SpeedrunGson(speedrun.getSplits());
+    static SpeedrunGson toGson(Speedrun analysis) {
+        return new SpeedrunGson(analysis.getSourceName(), RunMarkersGson.toGson(analysis.getMarkers()), analysis.getStart());
     }
 
     /**
@@ -33,8 +35,6 @@ class SpeedrunGson {
      * @return The {@link MutableSpeedrun}.
      */
     MutableSpeedrun fromGson() {
-        MutableSpeedrun run = new MutableSpeedrun();
-        splits.forEach(run::addSplit);
-        return run;
+        return new MutableSpeedrun(sourceName, start, markers.fromGson());
     }
 }

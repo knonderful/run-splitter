@@ -1,6 +1,6 @@
 package runsplitter;
 
-import runsplitter.speedrun.MutableAnalysis;
+import runsplitter.speedrun.MutableSpeedrun;
 
 /**
  * The {@link VideoAnalyzer} for Yoshi's Island on the Super NT.
@@ -21,8 +21,8 @@ public class YoshisIslandAnalyzer implements VideoAnalyzer {
     }
 
     @Override
-    public VideoFrameHandler createFrameHandler(MutableAnalysis analysis) {
-        return new YoshisIslandFrameHandler(analysis, false);
+    public VideoFrameHandler createFrameHandler(MutableSpeedrun run) {
+        return new YoshisIslandFrameHandler(run, false);
     }
 
     @Override
