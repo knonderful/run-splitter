@@ -40,6 +40,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import runsplitter.VideoAnalyzer;
 import runsplitter.YoshisIslandAnalyzer;
 import runsplitter.application.ApplicationSettingsPersistence;
@@ -69,7 +70,7 @@ public class GuiApplication extends Application {
                 ApplicationSettingsPersistence.load(),
                 libraryPersistence.load(),
                 analyzers);
-        
+
         Supplier<ApplicationState> stateSupplier = () -> state;
 
         AtomicReference<GameLibrary> lastSavedLibrary = new AtomicReference<>(libraryPersistence.load());
@@ -322,7 +323,14 @@ public class GuiApplication extends Application {
             }
         });
         MenuItem fileQuit = new MenuItem("Quit");
-        fileQuit.setOnAction(evt -> primaryStage.close());
+        fileQuit.setOnAction(evt -> {
+            primaryStage.fireEvent(
+                    new WindowEvent(
+                            primaryStage,
+                            WindowEvent.WINDOW_CLOSE_REQUEST
+                    )
+            );
+        });
         Menu fileMenu = new Menu("File", null, fileSave, fileQuit);
 
         // Tools menu
