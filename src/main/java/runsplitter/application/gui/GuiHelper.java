@@ -3,9 +3,11 @@ package runsplitter.application.gui;
 import afester.javafx.svg.SvgLoader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -13,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
@@ -23,15 +26,20 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 import org.controlsfx.validation.ValidationSupport;
+import runsplitter.VideoAnalyzer;
 import runsplitter.application.GuiTheme;
 import runsplitter.common.Thrower;
 
@@ -318,6 +326,50 @@ public class GuiHelper {
         gameControlsBox.setPadding(new Insets(1, 0, 1, 0));
         gameControlsBox.setSpacing(2);
         return gameControlsBox;
+    }
+
+    public static GridPane createFormGrid() {
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+        return grid;
+    }
+
+    public static ComboBox<Optional<VideoAnalyzer>> createAnalyzerCombo(List<VideoAnalyzer> analyzers, String nullString) {
+        ArrayList<Optional<VideoAnalyzer>> wrapped = new ArrayList<>(analyzers.size() + 1);
+        wrapped.add(Optional.ofNullable(null));
+        analyzers.stream()
+                .map(Optional::of)
+                .forEach(wrapped::add);
+
+        ComboBox<Optional<VideoAnalyzer>> analyzersCombo = new ComboBox<>(FXCollections.observableArrayList(wrapped));
+        analyzersCombo.setCellFactory(listView -> new ListCell<Optional<VideoAnalyzer>>() {
+            @Override
+            protected void updateItem(Optional<VideoAnalyzer> analyzer, boolean empty) {
+                super.updateItem(analyzer, empty);
+
+                if (empty || !analyzer.isPresent()) {
+                    setText(nullString);
+                } else {
+                    setText(analyzer.get().getName());
+                }
+            }
+        });
+        analyzersCombo.setConverter(new StringConverter<Optional<VideoAnalyzer>>() {
+            @Override
+            public String toString(Optional<VideoAnalyzer> object) {
+                if (!object.isPresent()) {
+                    return nullString;
+                }
+                return object.get().getName();
+            }
+
+            @Override
+            public Optional<VideoAnalyzer> fromString(String string) {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+        });
+        return analyzersCombo;
     }
 
     private static void applyVisiblityUpdates(Button button, ReadOnlyObjectProperty<?> selectedItemProperty) {

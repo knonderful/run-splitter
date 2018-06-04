@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import runsplitter.VideoAnalyzer;
 
 /**
  * A game.
@@ -11,6 +12,7 @@ import java.util.Objects;
 public class Game {
 
     private String name;
+    private VideoAnalyzer defaultVideoAnalyzer;
     private final List<Category> categories = new LinkedList<>();
 
     public String getName() {
@@ -29,11 +31,20 @@ public class Game {
         return categories;
     }
 
+    public VideoAnalyzer getDefaultVideoAnalyzer() {
+        return defaultVideoAnalyzer;
+    }
+
+    public void setDefaultVideoAnalyzer(VideoAnalyzer defaultVideoAnalyzer) {
+        this.defaultVideoAnalyzer = defaultVideoAnalyzer;
+    }
+
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 17 * hash + Objects.hashCode(this.name);
-        hash = 17 * hash + Objects.hashCode(this.categories);
+        hash = 29 * hash + Objects.hashCode(this.name);
+        hash = 29 * hash + Objects.hashCode(this.defaultVideoAnalyzer);
+        hash = 29 * hash + Objects.hashCode(this.categories);
         return hash;
     }
 
@@ -50,6 +61,9 @@ public class Game {
         }
         final Game other = (Game) obj;
         if (!Objects.equals(this.name, other.name)) {
+            return false;
+        }
+        if (!Objects.equals(this.defaultVideoAnalyzer, other.defaultVideoAnalyzer)) {
             return false;
         }
         return Objects.equals(this.categories, other.categories);

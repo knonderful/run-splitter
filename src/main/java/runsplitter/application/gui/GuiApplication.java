@@ -195,7 +195,7 @@ public class GuiApplication extends Application {
 
         ReadOnlyObjectProperty<Game> gameSelectedItemProperty = gameListView.getSelectionModel().selectedItemProperty();
         Button gameAddBtn = guiHelper.createAddButton(
-                () -> EditGameDialog.showAndWait(guiHelper, null),
+                () -> EditGameDialog.showAndWait(guiHelper, null, stateSupplier.get().getAnalyzers()),
                 game -> gameListView.getItems().add(game));
         Button gameRemoveBtn = guiHelper.createRemoveButton(
                 gameSelectedItemProperty,
@@ -204,7 +204,7 @@ public class GuiApplication extends Application {
         Button gameEditBtn = guiHelper.createEditButton(
                 gameSelectedItemProperty,
                 game -> {
-                    EditGameDialog.showAndWait(guiHelper, game);
+                    EditGameDialog.showAndWait(guiHelper, game, stateSupplier.get().getAnalyzers());
                     // Refresh the view in case the name of the game was changed
                     gameListView.refresh();
                 }

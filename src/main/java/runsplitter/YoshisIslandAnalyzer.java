@@ -7,18 +7,26 @@ import runsplitter.speedrun.MutableAnalysis;
  */
 public class YoshisIslandAnalyzer implements VideoAnalyzer {
 
+    private static final String IDENTIFIER = "supernt-yoshis-island";
+    private static final String NAME = "Yoshi's Island (Super NT)";
+
     @Override
     public String getIdentifier() {
-        return "supernt-yoshis-island";
+        return IDENTIFIER;
     }
 
     @Override
     public String getName() {
-        return "Yoshi's Island (Super NT)";
+        return NAME;
     }
 
     @Override
     public VideoFrameHandler createFrameHandler(MutableAnalysis analysis) {
         return new YoshisIslandFrameHandler(analysis, false);
+    }
+
+    @Override
+    public String toString() {
+        return IDENTIFIER;
     }
 }

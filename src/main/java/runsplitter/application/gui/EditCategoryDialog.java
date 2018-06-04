@@ -1,6 +1,7 @@
 package runsplitter.application.gui;
 
 import java.util.List;
+import java.util.Optional;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -10,14 +11,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
-import javafx.util.StringConverter;
 import org.controlsfx.validation.ValidationSupport;
 import org.controlsfx.validation.Validator;
 import runsplitter.VideoAnalyzer;
@@ -77,30 +76,7 @@ public class EditCategoryDialog {
         TextField nameTextField = new TextField();
 
         // Analyzer
-        ComboBox<VideoAnalyzer> analyzersCombo = new ComboBox<>(FXCollections.observableList(analyzers));
-        analyzersCombo.setCellFactory(listView -> new ListCell<VideoAnalyzer>() {
-            @Override
-            protected void updateItem(VideoAnalyzer analyzer, boolean empty) {
-                super.updateItem(analyzer, empty);
-
-                if (empty || analyzer == null || analyzer.getName() == null) {
-                    setText(null);
-                } else {
-                    setText(analyzer.getName());
-                }
-            }
-        });
-        analyzersCombo.setConverter(new StringConverter<VideoAnalyzer>() {
-            @Override
-            public String toString(VideoAnalyzer object) {
-                return object.getName();
-            }
-
-            @Override
-            public VideoAnalyzer fromString(String string) {
-                throw new UnsupportedOperationException("Not supported.");
-            }
-        });
+        ComboBox<Optional<VideoAnalyzer>> analyzerCombo = GuiHelper.createAnalyzerCombo(analyzers, "(Inherit)");
 
         // Splits
         TableColumn<SplitDescriptor, String> splitsNameCol = new TableColumn<>("Name");
@@ -133,13 +109,11 @@ public class EditCategoryDialog {
                 GuiHelper.createControlsBox(splitsAddBtn, splitsRemoveBtn, splitsUpBtn, splitsDownBtn)
         );
 
-        GridPane grid = new GridPane();
-        grid.setVgap(10);
-        grid.setHgap(10);
+        GridPane grid = GuiHelper.createFormGrid();
         grid.add(new Label("Name"), 0, 0);
         grid.add(nameTextField, 1, 0);
         grid.add(new Label("Analyzer"), 0, 1);
-        grid.add(analyzersCombo, 1, 1);
+        grid.add(analyzerCombo, 1, 1);
         grid.add(new Label("Splits"), 0, 2);
         grid.add(splitsBox, 1, 2);
 
@@ -150,7 +124,7 @@ public class EditCategoryDialog {
         ));
         multiFormBinding.add(FormBindings.create(
                 category::getVideoAnalyzer, category::setVideoAnalyzer,
-                analyzersCombo::getValue, analyzersCombo::setValue
+                () -> analyzerCombo.getValue().orElse(null), analyzer -> analyzerCombo.setValue(Optional.ofNullable(analyzer))
         ));
         multiFormBinding.add(FormBindings.create(
                 // Bean getter
