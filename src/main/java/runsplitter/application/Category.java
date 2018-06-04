@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import runsplitter.VideoAnalyzer;
+import runsplitter.speedrun.MutableSpeedrun;
 import runsplitter.speedrun.Speedrun;
 
 /**
@@ -15,7 +16,7 @@ public class Category {
     private String name;
     private VideoAnalyzer videoAnalyzer;
     private final List<SplitDescriptor> splitDescriptors = new LinkedList<>();
-    private final List<Speedrun> speedruns = new LinkedList<>();
+    private final List<MutableSpeedrun> speedruns = new LinkedList<>();
 
     public void setName(String name) {
         this.name = name;
@@ -45,7 +46,7 @@ public class Category {
         return Collections.unmodifiableList(speedruns);
     }
 
-    public List<Speedrun> getSpeedrunsModifiable() {
+    public List<MutableSpeedrun> getSpeedrunsModifiable() {
         return speedruns;
     }
 

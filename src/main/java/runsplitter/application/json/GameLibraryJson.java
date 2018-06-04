@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import runsplitter.VideoAnalyzer;
 import runsplitter.application.GameLibrary;
+import runsplitter.speedrun.Instant;
 
 /**
  * JSON serialization for {@link GameLibrary}.
@@ -26,10 +27,11 @@ public class GameLibraryJson {
     public GameLibraryJson(Supplier<Collection<VideoAnalyzer>> videoAnalyzersSupplier) {
         GsonBuilder builder = new GsonBuilder()
                 .registerTypeAdapter(VideoAnalyzer.class, new VideoAnalyzerAdapter(videoAnalyzersSupplier))
+                .registerTypeAdapter(Instant.class, new InstantAdapter())
                 .setPrettyPrinting();
         this.gson = builder.create();
     }
-    
+
     public void toJson(GameLibrary library, Appendable appendable) {
         gson.toJson(library, appendable);
     }
@@ -45,7 +47,7 @@ public class GameLibraryJson {
         VideoAnalyzerAdapter(Supplier<Collection<VideoAnalyzer>> videoAnalyzersSupplier) {
             this.videoAnalyzersSupplier = videoAnalyzersSupplier;
         }
-        
+
         @Override
         public void write(JsonWriter writer, VideoAnalyzer analyzer) throws IOException {
             if (analyzer == null) {
@@ -65,6 +67,19 @@ public class GameLibraryJson {
                         LOG.log(Level.WARNING, String.format("Could not find %s with identifier '%s'.", VideoAnalyzer.class.getSimpleName(), identifier));
                         return null;
                     });
+        }
+    }
+
+    private static class InstantAdapter extends TypeAdapter<Instant> {
+
+        @Override
+        public void write(JsonWriter writer, Instant instant) throws IOException {
+            writer.value(instant.toTimestamp());
+        }
+
+        @Override
+        public Instant read(JsonReader reader) throws IOException {
+            return Instant.fromTimestamp(reader.nextString());
         }
     }
 }

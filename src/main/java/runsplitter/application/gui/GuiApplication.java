@@ -1,5 +1,6 @@
 package runsplitter.application.gui;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -38,11 +39,16 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import runsplitter.VideoAnalyzer;
+import runsplitter.VideoFrame;
+import runsplitter.VideoFrameHandler;
+import runsplitter.VideoFrameHandlerChain;
 import runsplitter.YoshisIslandAnalyzer;
+import runsplitter.YoshisIslandFrameHandler;
 import runsplitter.application.ApplicationSettingsPersistence;
 import runsplitter.application.ApplicationState;
 import runsplitter.application.Category;
@@ -50,7 +56,7 @@ import runsplitter.application.Game;
 import runsplitter.application.GameLibrary;
 import runsplitter.application.GameLibraryPersistence;
 import runsplitter.speedrun.Instant;
-import runsplitter.speedrun.Speedrun;
+import runsplitter.speedrun.MutableSpeedrun;
 
 /**
  *
@@ -81,7 +87,7 @@ public class GuiApplication extends Application {
         // Exit the application if all windows are closed
         Platform.setImplicitExit(true);
 
-        SplitPane splitPane = new SplitPane(createRunSelectionPane(guiHelper, stateSupplier), createCurrentRunPane());
+        SplitPane splitPane = new SplitPane(createRunSelectionPane(guiHelper, stateSupplier, primaryStage), createCurrentRunPane());
 
         BorderPane mainPane = new BorderPane(
                 splitPane, // center
@@ -178,7 +184,7 @@ public class GuiApplication extends Application {
         return centerBox;
     }
 
-    private static Node createRunSelectionPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier) {
+    private static Node createRunSelectionPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage) {
         GameLibrary library = stateSupplier.get().getLibrary();
 
         ListView<Game> gameListView = new ListView<>(FXCollections.observableList(library.getGamesModifiable()));
@@ -272,23 +278,57 @@ public class GuiApplication extends Application {
         );
 
         // Speedruns
-        TableColumn<Speedrun, String> runsTimeCol = new TableColumn<>("Time");
-        runsTimeCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getMarkers().getFinalSplit().toTimestamp()));
-        TableColumn<Speedrun, String> runsSourceCol = new TableColumn<>("Source");
+        TableColumn<MutableSpeedrun, String> runsTimeCol = new TableColumn<>("Time");
+        runsTimeCol.setCellValueFactory(entry -> 
+                new ReadOnlyObjectWrapper<>(entry.getValue().getMarkers().getFinalSplit().toTimestamp()));
+        TableColumn<MutableSpeedrun, String> runsSourceCol = new TableColumn<>("Source");
         runsSourceCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getSourceName()));
-        TableView<Speedrun> runsTableView = new TableView<>();
-        ObservableList<TableColumn<Speedrun, ?>> runsCols = runsTableView.getColumns();
+        TableView<MutableSpeedrun> runsTableView = new TableView<>();
+        ObservableList<TableColumn<MutableSpeedrun, ?>> runsCols = runsTableView.getColumns();
         runsCols.add(runsTimeCol);
         runsCols.add(runsSourceCol);
 
-        ReadOnlyObjectProperty<Speedrun> runsSelectedItemProperty = runsTableView.getSelectionModel().selectedItemProperty();
+        ReadOnlyObjectProperty<MutableSpeedrun> runsSelectedItemProperty = runsTableView.getSelectionModel().selectedItemProperty();
         Button runsAddBtn = guiHelper.createAddButton(
                 () -> {
-                    Dialog dlg = new Dialog();
-                    dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK);
-                    dlg.setContentText("Not yet implemented.");
-                    dlg.showAndWait();
-                    return (Speedrun) null;
+                    FileChooser chooser = new FileChooser();
+                    chooser.setTitle("Choose a video file...");
+                    chooser.setInitialDirectory(stateSupplier.get().getSettings().getVideosDirectory().toFile());
+                    File selected = chooser.showOpenDialog(primaryStage);
+                    if (selected == null) {
+                        return null;
+                    }
+
+                    MutableSpeedrun run = new MutableSpeedrun(selected.getName());
+                    runsplitter.analyze.VideoAnalyzer analyzer = new runsplitter.analyze.VideoAnalyzer(selected.toPath());
+
+                    try {
+                        // TODO: Show a window with the analysis progress =)
+                        long duration = analyzer.open();
+
+                        YoshisIslandFrameHandler yiFrameHandler = new YoshisIslandFrameHandler(run, false);
+                        VideoFrameHandlerChain handlerChain = new VideoFrameHandlerChain(yiFrameHandler, new AnalysisProgressFrameHandler(duration));
+
+                        boolean doMore = true;
+                        // TODO: This should really not be running on the GUI thread =)
+                        while (doMore) {
+                            doMore = analyzer.read(handlerChain);
+                        }
+                    } catch (InterruptedException | IOException e) {
+                        // TODO: Not this:
+                        e.printStackTrace();
+                        return null;
+                    } finally {
+                        try {
+                            analyzer.close();
+                        } catch (InterruptedException | IOException e) {
+                            // TODO: Not this:
+                            e.printStackTrace();
+                            return null;
+                        }
+                    }
+
+                    return run;
                 },
                 run -> {
                     // TODO: Add at the correct place in the list
@@ -313,7 +353,7 @@ public class GuiApplication extends Application {
 
         // Update speedruns when category is changed
         categorySelectedItemProperty.addListener((observable, oldVal, newVal) -> {
-            ObservableList<Speedrun> observableList;
+            ObservableList<MutableSpeedrun> observableList;
             if (newVal == null) {
                 observableList = FXCollections.unmodifiableObservableList(FXCollections.emptyObservableList());
             } else {
@@ -395,6 +435,32 @@ public class GuiApplication extends Application {
 
         public String getSplitLabel() {
             return splitLabel;
+        }
+
+    }
+
+    /**
+     * A {@link VideoFrameHandler} that prints the progress of the video analysis to the standard output.
+     */
+    private static class AnalysisProgressFrameHandler implements VideoFrameHandler {
+
+        private final long totalDuration;
+        private long timeSinceLastUpdate;
+
+        AnalysisProgressFrameHandler(long totalDuration) {
+            this.totalDuration = totalDuration;
+        }
+
+        @Override
+        public void handle(VideoFrame frame) {
+            if (totalDuration == 0) {
+                return;
+            }
+            long currentMs = System.currentTimeMillis();
+            if (currentMs - timeSinceLastUpdate > 2000L) {
+                timeSinceLastUpdate = currentMs;
+                System.out.printf("%03d%n", frame.getTimestampMs() * 100L / totalDuration);
+            }
         }
 
     }

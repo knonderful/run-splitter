@@ -7,9 +7,15 @@ import java.util.Objects;
  */
 public class MutableSpeedrun implements Speedrun {
 
-    private final String sourceName;
-    private final MutableMarkers markers;
+    private String sourceName;
+    private MutableMarkers markers;
     private Instant start;
+
+    /**
+     * Creates a new instance.
+     */
+    public MutableSpeedrun() {
+    }
 
     /**
      * Creates a new instance.
