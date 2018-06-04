@@ -50,6 +50,7 @@ import runsplitter.application.Game;
 import runsplitter.application.GameLibrary;
 import runsplitter.application.GameLibraryPersistence;
 import runsplitter.speedrun.Instant;
+import runsplitter.speedrun.Speedrun;
 
 /**
  *
@@ -270,23 +271,57 @@ public class GuiApplication extends Application {
                 GuiHelper.createControlsBox(categoryAddBtn, categoryRemoveBtn, categoryEditBtn, categoryUpBtn, categoryDownBtn)
         );
 
-        TableColumn<RunEntry, String> runsTimeCol = new TableColumn<>("Total time");
-        runsTimeCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getTotalTime().toTimestamp()));
-        TableColumn<RunEntry, String> runsVideoCol = new TableColumn<>("Video");
-        runsVideoCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getVideoName()));
-        TableView<RunEntry> runsTableView = new TableView<>();
-        ObservableList<TableColumn<RunEntry, ?>> runsCols = runsTableView.getColumns();
+        // Speedruns
+        TableColumn<Speedrun, String> runsTimeCol = new TableColumn<>("Time");
+        runsTimeCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getMarkers().getFinalSplit().toTimestamp()));
+        TableColumn<Speedrun, String> runsSourceCol = new TableColumn<>("Source");
+        runsSourceCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getSourceName()));
+        TableView<Speedrun> runsTableView = new TableView<>();
+        ObservableList<TableColumn<Speedrun, ?>> runsCols = runsTableView.getColumns();
         runsCols.add(runsTimeCol);
-        runsCols.add(runsVideoCol);
-        ObservableList<RunEntry> runsItems = runsTableView.getItems();
-        runsItems.add(new RunEntry(new Instant(321878L), "W1_Perfect_run.mkv"));
-        runsItems.add(new RunEntry(new Instant(421878L), "W1_Got_lava_skip.mkv"));
-        runsItems.add(new RunEntry(new Instant(621878L), "W1_First_try.mkv"));
+        runsCols.add(runsSourceCol);
 
-        ReadOnlyObjectProperty<RunEntry> runsSelectedItemProperty = runsTableView.getSelectionModel().selectedItemProperty();
-        Button runsAddBtn = guiHelper.createAddButton(null, null);
-        Button runsRemoveBtn = guiHelper.createRemoveButton(runsSelectedItemProperty, null, null);
-        Button runsEditBtn = guiHelper.createEditButton(runsSelectedItemProperty, null);
+        ReadOnlyObjectProperty<Speedrun> runsSelectedItemProperty = runsTableView.getSelectionModel().selectedItemProperty();
+        Button runsAddBtn = guiHelper.createAddButton(
+                () -> {
+                    Dialog dlg = new Dialog();
+                    dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK);
+                    dlg.setContentText("Not yet implemented.");
+                    dlg.showAndWait();
+                    return (Speedrun) null;
+                },
+                run -> {
+                    // TODO: Add at the correct place in the list
+                    runsTableView.getItems().add(0, run);
+                },
+                categoryListView.getSelectionModel().selectedItemProperty()
+        );
+        Button runsRemoveBtn = guiHelper.createRemoveButton(
+                runsSelectedItemProperty,
+                run -> null, // No name means the dialog will handle it as anonymous
+                run -> runsTableView.getItems().remove(run)
+        );
+        Button runsEditBtn = guiHelper.createEditButton(
+                runsSelectedItemProperty,
+                run -> {
+                    Dialog dlg = new Dialog();
+                    dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK);
+                    dlg.setContentText("Not yet implemented.");
+                    dlg.showAndWait();
+                }
+        );
+
+        // Update speedruns when category is changed
+        categorySelectedItemProperty.addListener((observable, oldVal, newVal) -> {
+            ObservableList<Speedrun> observableList;
+            if (newVal == null) {
+                observableList = FXCollections.unmodifiableObservableList(FXCollections.emptyObservableList());
+            } else {
+                observableList = FXCollections.observableList(newVal.getSpeedrunsModifiable());
+            }
+            runsTableView.setItems(observableList);
+            runsTableView.getSelectionModel().select(0);
+        });
 
         VBox runsBox = new VBox(
                 new Label("Runs:"),
@@ -339,29 +374,6 @@ public class GuiApplication extends Application {
         Menu toolsMenu = new Menu("Tools", null, toolsSettings);
 
         return new MenuBar(fileMenu, toolsMenu);
-    }
-
-    /**
-     * Temporary class for creating the runs table.
-     */
-    private static class RunEntry {
-
-        private final Instant totalTime;
-        private final String videoName;
-
-        public RunEntry(Instant totalTime, String videoName) {
-            this.totalTime = totalTime;
-            this.videoName = videoName;
-        }
-
-        public Instant getTotalTime() {
-            return totalTime;
-        }
-
-        public String getVideoName() {
-            return videoName;
-        }
-
     }
 
     /**

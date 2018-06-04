@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import runsplitter.VideoAnalyzer;
-import runsplitter.VideoAnalyzerUtil;
+import runsplitter.speedrun.Speedrun;
 
 /**
  * A speed run category.
@@ -15,6 +15,7 @@ public class Category {
     private String name;
     private VideoAnalyzer videoAnalyzer;
     private final List<SplitDescriptor> splitDescriptors = new LinkedList<>();
+    private final List<Speedrun> speedruns = new LinkedList<>();
 
     public void setName(String name) {
         this.name = name;
@@ -40,12 +41,21 @@ public class Category {
         return splitDescriptors;
     }
 
+    public List<Speedrun> getSpeedruns() {
+        return Collections.unmodifiableList(speedruns);
+    }
+
+    public List<Speedrun> getSpeedrunsModifiable() {
+        return speedruns;
+    }
+
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 47 * hash + Objects.hashCode(this.name);
-        hash = 47 * hash + VideoAnalyzerUtil.createHashCode(this.videoAnalyzer);
-        hash = 47 * hash + Objects.hashCode(this.splitDescriptors);
+        hash = 79 * hash + Objects.hashCode(this.name);
+        hash = 79 * hash + Objects.hashCode(this.videoAnalyzer);
+        hash = 79 * hash + Objects.hashCode(this.splitDescriptors);
+        hash = 79 * hash + Objects.hashCode(this.speedruns);
         return hash;
     }
 
@@ -64,12 +74,12 @@ public class Category {
         if (!Objects.equals(this.name, other.name)) {
             return false;
         }
+        if (!Objects.equals(this.videoAnalyzer, other.videoAnalyzer)) {
+            return false;
+        }
         if (!Objects.equals(this.splitDescriptors, other.splitDescriptors)) {
             return false;
         }
-        if (!VideoAnalyzerUtil.areEqual(this.videoAnalyzer, other.videoAnalyzer)) {
-            return false;
-        }
-        return Objects.equals(this.videoAnalyzer, other.videoAnalyzer);
+        return Objects.equals(this.speedruns, other.speedruns);
     }
 }

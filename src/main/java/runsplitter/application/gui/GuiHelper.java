@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -191,7 +192,7 @@ public class GuiHelper {
         return createAddButton(itemSupplier, itemConsumer, null);
     }
 
-    public <T> Button createAddButton(Supplier<T> itemSupplier, Consumer<T> itemConsumer, ReadOnlyObjectProperty<?> parentObjectSelectedItemProperty) {
+    public <T> Button createAddButton(Supplier<T> itemSupplier, Consumer<T> itemConsumer, ReadOnlyProperty<?> parentObjectSelectedItemProperty) {
         Group svgImage = getSvgImage("plus.svg");
         Button button = createIconButton(svgImage, "Add");
         if (parentObjectSelectedItemProperty != null) {
@@ -372,7 +373,7 @@ public class GuiHelper {
         return analyzersCombo;
     }
 
-    private static void applyVisiblityUpdates(Button button, ReadOnlyObjectProperty<?> selectedItemProperty) {
+    private static void applyVisiblityUpdates(Button button, ReadOnlyProperty<?> selectedItemProperty) {
         button.setDisable(selectedItemProperty.getValue() == null);
         selectedItemProperty.addListener((observable, oldValue, newValue) -> button.setDisable(newValue == null));
     }
