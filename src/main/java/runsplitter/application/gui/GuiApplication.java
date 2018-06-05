@@ -46,9 +46,7 @@ import javafx.stage.WindowEvent;
 import runsplitter.VideoAnalyzer;
 import runsplitter.VideoFrame;
 import runsplitter.VideoFrameHandler;
-import runsplitter.VideoFrameHandlerChain;
 import runsplitter.YoshisIslandAnalyzer;
-import runsplitter.YoshisIslandFrameHandler;
 import runsplitter.application.ApplicationSettingsPersistence;
 import runsplitter.application.ApplicationState;
 import runsplitter.application.Category;
@@ -299,36 +297,8 @@ public class GuiApplication extends Application {
                         return null;
                     }
 
-                    MutableSpeedrun run = new MutableSpeedrun(selected.getName());
-                    runsplitter.analyze.VideoAnalyzer analyzer = new runsplitter.analyze.VideoAnalyzer(selected.toPath());
-
-                    try {
-                        // TODO: Show a window with the analysis progress =)
-                        long duration = analyzer.open();
-
-                        YoshisIslandFrameHandler yiFrameHandler = new YoshisIslandFrameHandler(run, false);
-                        VideoFrameHandlerChain handlerChain = new VideoFrameHandlerChain(yiFrameHandler, new AnalysisProgressFrameHandler(duration));
-
-                        boolean doMore = true;
-                        // TODO: This should really not be running on the GUI thread =)
-                        while (doMore) {
-                            doMore = analyzer.read(handlerChain);
-                        }
-                    } catch (InterruptedException | IOException e) {
-                        // TODO: Not this:
-                        e.printStackTrace();
-                        return null;
-                    } finally {
-                        try {
-                            analyzer.close();
-                        } catch (InterruptedException | IOException e) {
-                            // TODO: Not this:
-                            e.printStackTrace();
-                            return null;
-                        }
-                    }
-
-                    return run;
+                    // TODO: Select the correct video analyzer for this category/game
+                    return AnalyzeVideoDialog.showAndWait(guiHelper, selected, new YoshisIslandAnalyzer());
                 },
                 run -> {
                     // TODO: Add at the correct place in the list

@@ -150,7 +150,7 @@ public class GuiHelper {
                 throw new IllegalStateException(String.format("Unknown theme: %s.", currentTheme));
         }
     }
-
+    
     public static void handleException(Thrower thrower, String message) {
         try {
             thrower.call();

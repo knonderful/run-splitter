@@ -13,7 +13,7 @@ import runsplitter.VideoFrameHandler;
 /**
  * Class for analyzing video files.
  */
-public class VideoAnalyzer {
+public class VideoAnalyzer implements AutoCloseable {
 
     private final Path videoFile;
     private Demuxer demuxer;
@@ -109,6 +109,7 @@ public class VideoAnalyzer {
      * @throws java.lang.InterruptedException
      * @throws java.io.IOException
      */
+    @Override
     public void close() throws InterruptedException, IOException {
         demuxer.close();
     }
