@@ -1,9 +1,8 @@
 package runsplitter.common;
 
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -13,13 +12,14 @@ import java.util.function.Consumer;
  */
 public abstract class AbstractControlledExecution<T> implements ControlledExecution<T> {
 
-    private final ControlledExecutionCallback<T> callback;
-    private final ExecutionContextImpl context;
+    private final ControlledExecutionCallbacks<T> callbacks;
+    private final List<Runnable> queuedTasks = new LinkedList<>();
     private final Consumer<Runnable> taskExecutor;
+    private T lastSubject;
+    private boolean lastSubjectFlushed = true;
 
-    protected AbstractControlledExecution(ControlledExecutionCallback<T> callback, Consumer<Runnable> taskExecutor) {
-        this.callback = callback;
-        this.context = new ExecutionContextImpl();
+    protected AbstractControlledExecution(ControlledExecutionCallbacks<T> callbacks, Consumer<Runnable> taskExecutor) {
+        this.callbacks = callbacks;
         if (taskExecutor == null) {
             this.taskExecutor = Runnable::run;
         } else {
@@ -43,43 +43,30 @@ public abstract class AbstractControlledExecution<T> implements ControlledExecut
 
     @Override
     public synchronized void process(T subject) {
-        callback.submitTasks(context, subject);
-        if (shouldFlush(subject)) {
+        boolean willFlush = shouldFlush(subject);
+
+        callbacks.submitTasks(subject, queuedTasks::add);
+        if (willFlush) {
             flush();
+        } else {
+            lastSubject = subject;
+            lastSubjectFlushed = false;
         }
     }
 
     @Override
     public synchronized void flush() {
-        context.callAll(taskExecutor);
+        for (Iterator<Runnable> it = queuedTasks.iterator(); it.hasNext();) {
+            Runnable task = it.next();
+            taskExecutor.accept(task);
+            it.remove();
+        }
+
+        if (!lastSubjectFlushed) {
+            callbacks.submitTasksForFlush(lastSubject, taskExecutor);
+            lastSubjectFlushed = true;
+        }
+
         handlePostFlush();
-    }
-
-    private static class ExecutionContextImpl implements ExecutionContext {
-
-        private final List<Runnable> unslottedTasks;
-        private final Map<Integer, Runnable> slottedTasks;
-
-        ExecutionContextImpl() {
-            this.unslottedTasks = new LinkedList<>();
-            this.slottedTasks = new HashMap<>(4);
-        }
-
-        @Override
-        public void submit(Runnable task) {
-            unslottedTasks.add(task);
-        }
-
-        @Override
-        public void submit(int slot, Runnable task) {
-            slottedTasks.put(slot, task);
-        }
-
-        void callAll(Consumer<Runnable> executor) {
-            unslottedTasks.forEach(executor::accept);
-            unslottedTasks.clear();
-            slottedTasks.values().forEach(executor::accept);
-            slottedTasks.clear();
-        }
     }
 }

@@ -12,8 +12,8 @@ public class TimeControlledExecution<T> extends AbstractControlledExecution<T> {
     private final long minimumInterval;
     private long lastExecution;
 
-    public TimeControlledExecution(ControlledExecutionCallback<T> callback, Consumer<Runnable> taskExecutor, long minumumInterval) {
-        super(callback, taskExecutor);
+    public TimeControlledExecution(ControlledExecutionCallbacks<T> callbacks, Consumer<Runnable> taskExecutor, long minumumInterval) {
+        super(callbacks, taskExecutor);
         this.minimumInterval = minumumInterval;
     }
 

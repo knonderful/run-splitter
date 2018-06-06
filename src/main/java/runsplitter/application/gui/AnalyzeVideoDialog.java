@@ -1,6 +1,7 @@
 package runsplitter.application.gui;
 
 import java.io.File;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -13,6 +14,7 @@ import runsplitter.VideoAnalyzer;
 import runsplitter.VideoFrame;
 import runsplitter.VideoFrameHandler;
 import runsplitter.VideoFrameHandlerChain;
+import runsplitter.common.ControlledExecutionCallbacks;
 import runsplitter.common.TimeControlledExecution;
 import runsplitter.speedrun.MutableSpeedrun;
 
@@ -42,37 +44,41 @@ public class AnalyzeVideoDialog {
                 VideoFrameHandler frameHandler = videoAnalyzer.createFrameHandler(run);
                 try (runsplitter.analyze.VideoAnalyzer analyzer = new runsplitter.analyze.VideoAnalyzer(videoFile.toPath())) {
                     long duration = analyzer.open();
-
-                    TimeControlledExecution<VideoFrame> guiUpdateExecution;
-                    VideoFrameHandler finalFrameHandler;
                     if (duration > 0) {
                         timeSlider.setEndMs(duration);
-                        // Execute the GUI update at most once every 100ms
-                        guiUpdateExecution = new TimeControlledExecution<>(
-                                (ctx, frame) -> {
-                                    ctx.submit(1, () -> timeSlider.setTimeMs(frame.getTimestampMs()));
-                                },
-                                Platform::runLater,
-                                100L);
-
-                        // Frame handler for updating the progress in the GUI
-                        VideoFrameHandler progressFrameHandler = guiUpdateExecution::process;
-
-                        finalFrameHandler = new VideoFrameHandlerChain(frameHandler, progressFrameHandler);
-                    } else {
-                        guiUpdateExecution = null;
-                        finalFrameHandler = frameHandler;
                     }
+
+                    // Callbacks for performing GUI-related actions based on incoming video frames
+                    ControlledExecutionCallbacks<VideoFrame> analysisExecutionCallbacks = new ControlledExecutionCallbacks<VideoFrame>() {
+                        @Override
+                        public void submitTasks(VideoFrame subject, Consumer<Runnable> taskConsumer) {
+                            // Nothing to be done.
+                        }
+
+                        @Override
+                        public void submitTasksForFlush(VideoFrame frame, Consumer<Runnable> taskConsumer) {
+                            taskConsumer.accept(() -> timeSlider.setTimeMs(frame.getTimestampMs()));
+                        }
+                    };
+
+                    // Execute the GUI update at most once every 100ms
+                    TimeControlledExecution<VideoFrame> guiUpdateExecution = new TimeControlledExecution<>(
+                            analysisExecutionCallbacks,
+                            Platform::runLater,
+                            100L);
+
+                    // Frame handler for updating the GUI with the analysis
+                    VideoFrameHandler guiUpdateFrameHandler = guiUpdateExecution::process;
+
+                    VideoFrameHandlerChain frameHandlerChain = new VideoFrameHandlerChain(frameHandler, guiUpdateFrameHandler);
 
                     boolean readMore = true;
                     while (readMore) {
-                        readMore = analyzer.read(finalFrameHandler);
+                        readMore = analyzer.read(frameHandlerChain);
                     }
 
                     // Explicitly update the GUI with the last state
-                    if (guiUpdateExecution != null) {
-                        guiUpdateExecution.flush();
-                    }
+                    guiUpdateExecution.flush();
                 }
 
                 return run;
