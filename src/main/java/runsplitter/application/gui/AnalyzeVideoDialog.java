@@ -8,11 +8,12 @@ import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
-import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.GridPane;
 import runsplitter.VideoAnalyzer;
+import runsplitter.VideoFrame;
 import runsplitter.VideoFrameHandler;
 import runsplitter.VideoFrameHandlerChain;
+import runsplitter.common.TimeControlledExecution;
 import runsplitter.speedrun.MutableSpeedrun;
 
 /**
@@ -25,9 +26,12 @@ public class AnalyzeVideoDialog {
     public static MutableSpeedrun showAndWait(GuiHelper guiHelper, File videoFile, VideoAnalyzer videoAnalyzer) {
         Dialog<ButtonType> analyzeDialog = new Dialog<>();
         analyzeDialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        ProgressBar progressBar = new ProgressBar();
+        TimeSlider timeSlider = new TimeSlider();
+        // Don't let the user control the slider
+        timeSlider.getSlider().setDisable(true);
+        timeSlider.setTimeMs(0);
         GridPane grid = GuiHelper.createFormGrid();
-        grid.add(progressBar, 0, 0);
+        grid.add(timeSlider, 0, 0);
         analyzeDialog.getDialogPane().setContent(grid);
         analyzeDialog.setTitle(String.format("Analyze %s", videoFile.getName()));
 
@@ -39,23 +43,35 @@ public class AnalyzeVideoDialog {
                 try (runsplitter.analyze.VideoAnalyzer analyzer = new runsplitter.analyze.VideoAnalyzer(videoFile.toPath())) {
                     long duration = analyzer.open();
 
+                    TimeControlledExecution<VideoFrame> guiUpdateExecution;
                     VideoFrameHandler finalFrameHandler;
                     if (duration > 0) {
+                        timeSlider.setEndMs(duration);
+                        // Execute the GUI update at most once every 100ms
+                        guiUpdateExecution = new TimeControlledExecution<>(
+                                (ctx, frame) -> {
+                                    ctx.submit(1, () -> timeSlider.setTimeMs(frame.getTimestampMs()));
+                                },
+                                Platform::runLater,
+                                100L);
+
                         // Frame handler for updating the progress in the GUI
-                        VideoFrameHandler progressFrameHandler = frame -> {
-                            // TODO: Maybe not report the progress so often? Maybe at most 10 times per second or so...
-                            double progress = ((double) (frame.getTimestampMs() * 100 / duration)) / 100.0;
-                            Platform.runLater(() -> progressBar.setProgress(progress));
-                        };
+                        VideoFrameHandler progressFrameHandler = guiUpdateExecution::process;
 
                         finalFrameHandler = new VideoFrameHandlerChain(frameHandler, progressFrameHandler);
                     } else {
+                        guiUpdateExecution = null;
                         finalFrameHandler = frameHandler;
                     }
 
                     boolean readMore = true;
                     while (readMore) {
                         readMore = analyzer.read(finalFrameHandler);
+                    }
+
+                    // Explicitly update the GUI with the last state
+                    if (guiUpdateExecution != null) {
+                        guiUpdateExecution.flush();
                     }
                 }
 
@@ -74,7 +90,9 @@ public class AnalyzeVideoDialog {
         }
 
         // Might have to terminate the thread, in case it is still running
-        thread.interrupt();
+        if (thread.isAlive()) {
+            thread.interrupt();
+        }
 
         return null;
     }
