@@ -19,11 +19,11 @@ class VideoFrameImpl implements VideoFrame {
         this.converter = MediaPictureConverterFactory.createConverter(MediaPictureConverterFactory.HUMBLE_BGR_24, picture);
     }
 
-    void update(MediaPicture picture) {
+    void update(MediaPicture picture, long timestampMs) {
         this.image = converter.toImage(image, picture);
-        this.timestampMs = picture.getTimeStamp();
+        this.timestampMs = timestampMs;
     }
-    
+
     @Override
     public long getTimestampMs() {
         return timestampMs;

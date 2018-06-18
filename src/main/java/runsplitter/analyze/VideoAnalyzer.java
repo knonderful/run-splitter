@@ -6,6 +6,7 @@ import io.humble.video.DemuxerStream;
 import io.humble.video.MediaDescriptor;
 import io.humble.video.MediaPacket;
 import io.humble.video.MediaPicture;
+import io.humble.video.Rational;
 import java.io.IOException;
 import java.nio.file.Path;
 import runsplitter.VideoFrameHandler;
@@ -84,7 +85,7 @@ public class VideoAnalyzer implements AutoCloseable {
                 do {
                     bytesRead += videoDecoder.decode(picture, packet, offset);
                     if (picture.isComplete()) {
-                        processPicture(frame, picture, frameHandler);
+                        processPicture(frame, picture, packet, frameHandler);
                     }
                     offset += bytesRead;
                 } while (offset < packet.getSize());
@@ -96,7 +97,7 @@ public class VideoAnalyzer implements AutoCloseable {
         do {
             videoDecoder.decode(picture, null, 0);
             if (picture.isComplete()) {
-                processPicture(frame, picture, frameHandler);
+                processPicture(frame, picture, packet, frameHandler);
             }
         } while (picture.isComplete());
 
@@ -114,8 +115,13 @@ public class VideoAnalyzer implements AutoCloseable {
         demuxer.close();
     }
 
-    private void processPicture(VideoFrameImpl frame, MediaPicture picture, VideoFrameHandler frameHandler) {
-        frame.update(picture);
+    private void processPicture(VideoFrameImpl frame, MediaPicture picture, MediaPacket packet, VideoFrameHandler frameHandler) {
+        frame.update(picture, calculateTimestamp(packet));
         frameHandler.handle(frame);
+    }
+
+    private static long calculateTimestamp(MediaPacket packet) {
+        Rational timeBase = packet.getTimeBase();
+        return timeBase.getNumerator() * 1000 * packet.getPts() / timeBase.getDenominator();
     }
 }
