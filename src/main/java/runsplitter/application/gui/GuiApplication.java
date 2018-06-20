@@ -44,8 +44,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import runsplitter.VideoAnalyzer;
-import runsplitter.VideoFrame;
-import runsplitter.VideoFrameHandler;
 import runsplitter.YoshisIslandAnalyzer;
 import runsplitter.application.ApplicationSettingsPersistence;
 import runsplitter.application.ApplicationState;
@@ -405,32 +403,6 @@ public class GuiApplication extends Application {
 
         public String getSplitLabel() {
             return splitLabel;
-        }
-
-    }
-
-    /**
-     * A {@link VideoFrameHandler} that prints the progress of the video analysis to the standard output.
-     */
-    private static class AnalysisProgressFrameHandler implements VideoFrameHandler {
-
-        private final long totalDuration;
-        private long timeSinceLastUpdate;
-
-        AnalysisProgressFrameHandler(long totalDuration) {
-            this.totalDuration = totalDuration;
-        }
-
-        @Override
-        public void handle(VideoFrame frame) {
-            if (totalDuration == 0) {
-                return;
-            }
-            long currentMs = System.currentTimeMillis();
-            if (currentMs - timeSinceLastUpdate > 2000L) {
-                timeSinceLastUpdate = currentMs;
-                System.out.printf("%03d%n", frame.getTimestampMs() * 100L / totalDuration);
-            }
         }
 
     }
