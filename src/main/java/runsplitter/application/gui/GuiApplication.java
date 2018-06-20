@@ -83,7 +83,8 @@ public class GuiApplication extends Application {
         // Exit the application if all windows are closed
         Platform.setImplicitExit(true);
 
-        SplitPane splitPane = new SplitPane(createRunSelectionPane(guiHelper, stateSupplier, primaryStage), createCurrentRunPane());
+        AtomicReference<ReadOnlyObjectProperty<MutableSpeedrun>> selectedRunPropertyReference = new AtomicReference<>();
+        SplitPane splitPane = new SplitPane(createRunSelectionPane(guiHelper, stateSupplier, primaryStage, selectedRunPropertyReference::set), createCurrentRunPane(selectedRunPropertyReference.get()));
 
         BorderPane mainPane = new BorderPane(
                 splitPane, // center
@@ -116,29 +117,33 @@ public class GuiApplication extends Application {
         primaryStage.show();
     }
 
-    private static Node createCurrentRunPane() {
+    private static Node createCurrentRunPane(ReadOnlyObjectProperty<MutableSpeedrun> runsSelectedItemProperty) {
         // Split times table
         Label splitsLbl = new Label("Split times:");
-        TableView<SplitEntry> splitsTableView = new TableView<>();
+        TableView<Instant> splitsTableView = new TableView<>();
         // Disable sorting in the split times table
         splitsTableView.setSortPolicy(entry -> false);
-        TableColumn<SplitEntry, String> splitsLabelCol = new TableColumn<>("Label");
-        splitsLabelCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getSplitLabel()));
-        TableColumn<SplitEntry, String> splitsTimeCol = new TableColumn<>("Time");
-        splitsTimeCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getTime().toTimestamp()));
-        ObservableList<TableColumn<SplitEntry, ?>> splitsCols = splitsTableView.getColumns();
+        TableColumn<Instant, String> splitsLabelCol = new TableColumn<>("Label");
+        //splitsLabelCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getSplitLabel()));
+        TableColumn<Instant, String> splitsTimeCol = new TableColumn<>("Time");
+        splitsTimeCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().toTimestamp()));
+        ObservableList<TableColumn<Instant, ?>> splitsCols = splitsTableView.getColumns();
         splitsCols.add(splitsLabelCol);
         splitsCols.add(splitsTimeCol);
-        ObservableList<SplitEntry> splitsItems = splitsTableView.getItems();
-        splitsItems.add(new SplitEntry("1-1", new Instant(120320L)));
-        splitsItems.add(new SplitEntry("1-2", new Instant(288722L)));
-        splitsItems.add(new SplitEntry("1-3", new Instant(379810L)));
-        splitsItems.add(new SplitEntry("1-4", new Instant(502188L)));
-        splitsItems.add(new SplitEntry("1-5", new Instant(662889L)));
-        splitsItems.add(new SplitEntry("1-6", new Instant(813878L)));
-        splitsItems.add(new SplitEntry("1-7", new Instant(952319L)));
-        splitsItems.add(new SplitEntry("1-8", new Instant(1212310L)));
 
+        // TODO: Combine the "template" from the category with the splits list to fill out the table...
+        runsSelectedItemProperty.addListener((observable, oldRun, newRun) -> {
+            ObservableList<Instant> observableList;
+            if (newRun == null) {
+                observableList = FXCollections.unmodifiableObservableList(FXCollections.emptyObservableList());
+            } else {
+                observableList = FXCollections.observableList(newRun.getMarkers().getSplits());
+            }
+            splitsTableView.setItems(observableList);
+            splitsTableView.getSelectionModel().select(0);
+        });
+
+        ObservableList<Instant> splitsItems = splitsTableView.getItems();
         // Time slider
         Slider timeSlider = new Slider(0, 100, 0);
         Label timeSliderLabel = new Label(new Instant(0).toTimestamp());
@@ -180,7 +185,7 @@ public class GuiApplication extends Application {
         return centerBox;
     }
 
-    private static Node createRunSelectionPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage) {
+    private static Node createRunSelectionPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage, Consumer<ReadOnlyObjectProperty<MutableSpeedrun>> speedRunPropertyConsumer) {
         GameLibrary library = stateSupplier.get().getLibrary();
 
         ListView<Game> gameListView = new ListView<>(FXCollections.observableList(library.getGamesModifiable()));
@@ -275,8 +280,8 @@ public class GuiApplication extends Application {
 
         // Speedruns
         TableColumn<MutableSpeedrun, String> runsTimeCol = new TableColumn<>("Time");
-        runsTimeCol.setCellValueFactory(entry -> 
-                new ReadOnlyObjectWrapper<>(entry.getValue().getMarkers().getFinalSplit().toTimestamp()));
+        runsTimeCol.setCellValueFactory(entry
+                -> new ReadOnlyObjectWrapper<>(entry.getValue().getMarkers().getFinalSplit().toTimestamp()));
         TableColumn<MutableSpeedrun, String> runsSourceCol = new TableColumn<>("Source");
         runsSourceCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getSourceName()));
         TableView<MutableSpeedrun> runsTableView = new TableView<>();
@@ -285,6 +290,7 @@ public class GuiApplication extends Application {
         runsCols.add(runsSourceCol);
 
         ReadOnlyObjectProperty<MutableSpeedrun> runsSelectedItemProperty = runsTableView.getSelectionModel().selectedItemProperty();
+        speedRunPropertyConsumer.accept(runsSelectedItemProperty);
         Button runsAddBtn = guiHelper.createAddButton(
                 () -> {
                     FileChooser chooser = new FileChooser();
