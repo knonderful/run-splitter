@@ -2,7 +2,9 @@ package runsplitter.application.gui;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -51,6 +53,7 @@ import runsplitter.application.Category;
 import runsplitter.application.Game;
 import runsplitter.application.GameLibrary;
 import runsplitter.application.GameLibraryPersistence;
+import runsplitter.application.SplitDescriptor;
 import runsplitter.speedrun.Instant;
 import runsplitter.speedrun.MutableSpeedrun;
 
@@ -84,7 +87,11 @@ public class GuiApplication extends Application {
         Platform.setImplicitExit(true);
 
         AtomicReference<ReadOnlyObjectProperty<MutableSpeedrun>> selectedRunPropertyReference = new AtomicReference<>();
-        SplitPane splitPane = new SplitPane(createRunSelectionPane(guiHelper, stateSupplier, primaryStage, selectedRunPropertyReference::set), createCurrentRunPane(selectedRunPropertyReference.get()));
+        AtomicReference<ReadOnlyObjectProperty<Category>> categoryPropertyReference = new AtomicReference<>();
+        SplitPane splitPane = new SplitPane(
+                createRunSelectionPane(guiHelper, stateSupplier, primaryStage, categoryPropertyReference::set, selectedRunPropertyReference::set),
+                createCurrentRunPane(categoryPropertyReference.get(), selectedRunPropertyReference.get())
+        );
 
         BorderPane mainPane = new BorderPane(
                 splitPane, // center
@@ -117,33 +124,55 @@ public class GuiApplication extends Application {
         primaryStage.show();
     }
 
-    private static Node createCurrentRunPane(ReadOnlyObjectProperty<MutableSpeedrun> runsSelectedItemProperty) {
+    private static Node createCurrentRunPane(ReadOnlyObjectProperty<Category> categorySelectedItemProperty, ReadOnlyObjectProperty<MutableSpeedrun> runsSelectedItemProperty) {
         // Split times table
         Label splitsLbl = new Label("Split times:");
-        TableView<Instant> splitsTableView = new TableView<>();
+        TableView<SplitEntry> splitsTableView = new TableView<>();
         // Disable sorting in the split times table
         splitsTableView.setSortPolicy(entry -> false);
-        TableColumn<Instant, String> splitsLabelCol = new TableColumn<>("Label");
-        //splitsLabelCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getSplitLabel()));
-        TableColumn<Instant, String> splitsTimeCol = new TableColumn<>("Time");
-        splitsTimeCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().toTimestamp()));
-        ObservableList<TableColumn<Instant, ?>> splitsCols = splitsTableView.getColumns();
-        splitsCols.add(splitsLabelCol);
+        TableColumn<SplitEntry, String> splitsNameCol = new TableColumn<>("Name");
+        splitsNameCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getName()));
+        TableColumn<SplitEntry, String> splitsTimeCol = new TableColumn<>("Time");
+        splitsTimeCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getTime().toTimestamp()));
+        TableColumn<SplitEntry, String> splitsDescriptionCol = new TableColumn<>("Description");
+        splitsDescriptionCol.setCellValueFactory(entry -> new ReadOnlyObjectWrapper<>(entry.getValue().getDescription()));
+        ObservableList<TableColumn<SplitEntry, ?>> splitsCols = splitsTableView.getColumns();
+        splitsCols.add(splitsNameCol);
         splitsCols.add(splitsTimeCol);
+        splitsCols.add(splitsDescriptionCol);
 
-        // TODO: Combine the "template" from the category with the splits list to fill out the table...
         runsSelectedItemProperty.addListener((observable, oldRun, newRun) -> {
-            ObservableList<Instant> observableList;
+            ObservableList<SplitEntry> observableList;
             if (newRun == null) {
                 observableList = FXCollections.unmodifiableObservableList(FXCollections.emptyObservableList());
             } else {
-                observableList = FXCollections.observableList(newRun.getMarkers().getSplits());
+                Category category = categorySelectedItemProperty.get();
+                List<Instant> splits = newRun.getMarkers().getSplits();
+                List<SplitDescriptor> descriptors = category.getSplitDescriptors();
+                List<SplitEntry> entries = new ArrayList<>(splits.size());
+
+                Iterator<SplitDescriptor> descIterator = descriptors.iterator();
+                for (Instant split : splits) {
+                    String name;
+                    String description;
+                    if (descIterator.hasNext()) {
+                        SplitDescriptor descriptor = descIterator.next();
+                        name = descriptor.getName();
+                        description = descriptor.getDescription();
+                    } else {
+                        name = null;
+                        description = null;
+                    }
+
+                    entries.add(new SplitEntry(name, split, description));
+                }
+                observableList = FXCollections.observableList(entries);
             }
             splitsTableView.setItems(observableList);
             splitsTableView.getSelectionModel().select(0);
         });
 
-        ObservableList<Instant> splitsItems = splitsTableView.getItems();
+        ObservableList<SplitEntry> splitsItems = splitsTableView.getItems();
         // Time slider
         Slider timeSlider = new Slider(0, 100, 0);
         Label timeSliderLabel = new Label(new Instant(0).toTimestamp());
@@ -185,7 +214,7 @@ public class GuiApplication extends Application {
         return centerBox;
     }
 
-    private static Node createRunSelectionPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage, Consumer<ReadOnlyObjectProperty<MutableSpeedrun>> speedRunPropertyConsumer) {
+    private static Node createRunSelectionPane(GuiHelper guiHelper, Supplier<ApplicationState> stateSupplier, Stage primaryStage, Consumer<ReadOnlyObjectProperty<Category>> categoryPropertyConsumer, Consumer<ReadOnlyObjectProperty<MutableSpeedrun>> speedRunPropertyConsumer) {
         GameLibrary library = stateSupplier.get().getLibrary();
 
         ListView<Game> gameListView = new ListView<>(FXCollections.observableList(library.getGamesModifiable()));
@@ -253,6 +282,7 @@ public class GuiApplication extends Application {
         });
 
         ReadOnlyObjectProperty<Category> categorySelectedItemProperty = categoryListView.getSelectionModel().selectedItemProperty();
+        categoryPropertyConsumer.accept(categorySelectedItemProperty);
         Button categoryAddBtn = guiHelper.createAddButton(
                 () -> EditCategoryDialog.showAndWait(guiHelper, null, stateSupplier.get().getAnalyzers()),
                 category -> categoryListView.getItems().add(category),
@@ -391,25 +421,30 @@ public class GuiApplication extends Application {
     }
 
     /**
-     * Temporary class for creating the split times table.
+     * An entry in a splits table.
      */
     private static class SplitEntry {
 
         private final Instant time;
-        private final String splitLabel;
+        private final String name;
+        private final String description;
 
-        public SplitEntry(String splitLabel, Instant totalTime) {
-            this.splitLabel = splitLabel;
+        public SplitEntry(String name, Instant totalTime, String description) {
+            this.name = name;
             this.time = totalTime;
+            this.description = description;
         }
 
         public Instant getTime() {
             return time;
         }
 
-        public String getSplitLabel() {
-            return splitLabel;
+        public String getName() {
+            return name;
         }
 
+        public String getDescription() {
+            return description;
+        }
     }
 }
