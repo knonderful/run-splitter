@@ -85,7 +85,7 @@ public class VideoAnalyzer implements AutoCloseable {
                 do {
                     bytesRead += videoDecoder.decode(picture, packet, offset);
                     if (picture.isComplete()) {
-                        processPicture(frame, picture, packet, frameHandler);
+                        processPicture(frame, picture, packet.getTimeBase(), frameHandler);
                     }
                     offset += bytesRead;
                 } while (offset < packet.getSize());
@@ -97,7 +97,7 @@ public class VideoAnalyzer implements AutoCloseable {
         do {
             videoDecoder.decode(picture, null, 0);
             if (picture.isComplete()) {
-                processPicture(frame, picture, packet, frameHandler);
+                processPicture(frame, picture, packet.getTimeBase(), frameHandler);
             }
         } while (picture.isComplete());
 
@@ -115,13 +115,12 @@ public class VideoAnalyzer implements AutoCloseable {
         demuxer.close();
     }
 
-    private void processPicture(VideoFrameImpl frame, MediaPicture picture, MediaPacket packet, VideoFrameHandler frameHandler) {
-        frame.update(picture, calculateTimestamp(packet));
+    private void processPicture(VideoFrameImpl frame, MediaPicture picture, Rational timeBase, VideoFrameHandler frameHandler) {
+        frame.update(picture, calculateTimestamp(timeBase, picture.getPacketPts()));
         frameHandler.handle(frame);
     }
 
-    private static long calculateTimestamp(MediaPacket packet) {
-        Rational timeBase = packet.getTimeBase();
-        return timeBase.getNumerator() * 1000 * packet.getPts() / timeBase.getDenominator();
+    private static long calculateTimestamp(Rational timeBase, long pts) {
+        return timeBase.getNumerator() * 1000 * pts / timeBase.getDenominator();
     }
 }
