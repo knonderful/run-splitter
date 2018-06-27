@@ -116,7 +116,7 @@ public class VideoAnalyzer implements AutoCloseable {
     }
 
     private void processPicture(VideoFrameImpl frame, MediaPicture picture, Rational timeBase, VideoFrameHandler frameHandler) {
-        frame.update(picture, calculateTimestamp(timeBase, picture.getPacketPts()));
+        frame.update(picture, calculateTimestamp(timeBase, picture.getPts()));
         frameHandler.handle(frame);
     }
 
