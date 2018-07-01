@@ -8,7 +8,9 @@ import java.awt.image.BufferedImage;
 public interface VideoFrame {
 
     /**
-     * Retrieves the {@link BufferedImage} that represents the frame.
+     * Creates a {@link BufferedImage} that represents the frame.
+     * <p>
+     * Note that a new {@link BufferedImage} instance is created every time this method is called.
      *
      * @return The {@link BufferedImage}.
      */
@@ -20,4 +22,11 @@ public interface VideoFrame {
      * @return The time stamp in milliseconds.
      */
     long getTimestampMs();
+
+    /**
+     * Creates a deep copy of this {@link VideoFrame}.
+     *
+     * @return The new {@link VideoFrame}.
+     */
+    VideoFrame copy();
 }

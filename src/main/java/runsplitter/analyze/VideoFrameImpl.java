@@ -33,4 +33,9 @@ class VideoFrameImpl implements VideoFrame {
     public BufferedImage toImage() {
         return image;
     }
+
+    @Override
+    public VideoFrame copy() {
+        throw new UnsupportedOperationException("Copy not supported.");
+    }
 }
