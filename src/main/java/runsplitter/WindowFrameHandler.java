@@ -51,7 +51,7 @@ public class WindowFrameHandler implements VideoFrameHandler {
             }
         }
 
-        window.setImage(frame.getImage());
+        window.setImage(frame.toImage());
     }
 
     /**

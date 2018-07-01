@@ -30,7 +30,7 @@ class VideoFrameImpl implements VideoFrame {
     }
 
     @Override
-    public BufferedImage getImage() {
+    public BufferedImage toImage() {
         return image;
     }
 }

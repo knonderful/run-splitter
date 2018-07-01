@@ -67,7 +67,7 @@ public class YoshisIslandFrameHandler implements VideoFrameHandler {
 
     @Override
     public void handle(VideoFrame frame) {
-        BufferedImage image = frame.getImage();
+        BufferedImage image = frame.toImage();
 
         long timeStamp = frame.getTimestampMs();
         if (frameIsBlackScreen(image, drawDebug)) {

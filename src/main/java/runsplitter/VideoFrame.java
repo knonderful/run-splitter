@@ -12,7 +12,7 @@ public interface VideoFrame {
      *
      * @return The {@link BufferedImage}.
      */
-    BufferedImage getImage();
+    BufferedImage toImage();
 
     /**
      * Retrieves the time stamp of this frame inside the stream.
