@@ -1,0 +1,89 @@
+# Yoshi's Island video analysis
+
+This document describes the approach for identifying key points in a Yoshi's Island speed run video in order to determine the appropriate split times.
+
+## Clean run start detection
+
+A clean run is a run that is started from a new save game.
+The clean run start can be identified by a screen that is completely white (255, 255, 255) and deducting about 3100 ms from the time stamp of that frame.
+
+## End of level detection
+
+The end of a level is when the world map appears after a black-out from the score screen.
+Just taking the fade-in after the black-out after this score screen is not sufficient, since the player may have hit a bonus game, which should not be added to the start of the next level.
+Note that just taking the appearance of the world map (without the score screen) is not sufficient, since there are occurrances where the world map appears even if no level has been finished (for instance after the game intro, between world transitions or after a reset).
+
+### Score screen detection
+
+The score screen appears at the end of every completed level (except after the show-down with Bowser).
+There is plenty of area that can be scanned for the color (31, 124, 54).
+The current implementation scans a 32x32 area the has as top-left point [520, 200] for the exact color and seems to function reliably.
+More scan areas should be added to make this approach more robust.
+Additionally, the color matching should probably be made more lenient to account for encoding artifacts (see next section for an approach).
+
+### World map detection
+
+Detecting a world map is not as simple as detecting the score screen, since the target scan areas are surrounded by other colors which also can change, in addition.
+This results in the target scan areas often not containing exactly the target color due to encoding artifacting.
+The world map can be identified by scanning the left and right side of the paper map area for the proper grey value (16, 16, 16).
+The following is the output of a little test program that maps the number of pixels that matched each color in the left and right scan areas.
+The values are the sum of 242 packets, or about 4000 ms. The scan areas are:
+Left:  [ 165, 320] - [ 181, 552]
+Right: [1105, 320] - [1121, 552]
+
+==================================================================================================
+LEFT -> min: 3152 (84%)  max: 3712 (100%)   <<< The number of pixels that are exactly (16, 16, 16)
+(16, 16, 16) -> 888511
+(17, 15, 16) -> 719
+(16, 15, 18) -> 1039
+(16, 16, 13) -> 3959
+(14, 16, 16) -> 359
+RIGHT -> min: 2223 (59%)  max: 3670 (98%)   <<< The number of pixels that are exactly (16, 16, 16)
+(16, 16, 16) -> 865594
+(17, 17, 17) -> 491
+(15, 15, 15) -> 1004
+(17, 15, 16) -> 3955
+(16, 13, 17) -> 39
+(16, 15, 18) -> 6615
+(13, 15, 15) -> 79
+(17, 16, 19) -> 471
+(17, 14, 18) -> 1523
+(15, 15, 12) -> 4
+(14, 16, 13) -> 2367
+(14, 15, 18) -> 319
+(16, 16, 13) -> 9390
+(14, 16, 16) -> 2687
+(16, 14, 15) -> 39
+Total packets: 242
+==================================================================================================
+
+Due to fade-ins and fade-outs (e.g. when START->SELECT is used to exit a level) it could theoretically happen that a frame matches these values.
+Since the world map is always on screen for multiple seconds, it should be safe to identify a continuous sequence of frames that match these levels as a world map section.
+
+A frame fails to match if any of the following happens:
+
+* One of the RGB components has a too large deviation from the expected value (e.g. more than 10, which is rather safe).
+** The next approach might be simpler for this "hard" requirement.
+** What about odd encoding artifacts? Maybe we should ignore pixels that have too much of a deviation, instead of failing the match. Of course, the number of pixels that are tolerated to fail this criterion before we abort must be limited.
+* The average deviation exceeds a certain threshold.
+** One strategy for implementing this could be to sum the deviation from the expected values for each component. The threshold can be calculated by multiplying the deviation allowance per pixel by the number of pixels in the area. Note that this threshold can be pre-calculated and the analyzer can abort early if the threshold gets exceeded before the entire area is scanned.
+*** Example:
+**** allowance_per_pixel = 12 (4 for each color component, which is probably generous, since by far most pixels will be an exact match)
+**** scan_area = [10, 20] - [20, 30]
+**** total_allowance = (20-10)*(30-20)*12 = 1200
+*** Note: a test program should be written to see which deviation can be expected. A safe value should be taken, based on this test.
+
+## Open questions
+
+### End of game detection
+
+The end of the game can not be detected in the same way as a normal level, since there is no score screen and also the game does not return to the world map.
+Instead, the player is forced to perform a reset in order to complete the remaining special level(s).
+
+### Pause screen support
+
+It would be very nice to detect a pause screen.
+This would make it possible for the player to answer the phone, open the door or whatever during a run, without having to give up.
+The main question is how to detect a pause screen.
+The pause screen looks a lot like the end-of-level score screen, only without the green background.
+Maybe scanning certain areas for black for more than, say, 10 seconds could be a simple approach.
