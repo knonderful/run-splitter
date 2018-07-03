@@ -129,8 +129,8 @@ public class VideoProcessor {
                     currentBlock = new DefaultVideoFrameBlock(decoderFactory);
                 }
 
-                // Add the current packet to the block
-                currentBlock.add(currentPacket);
+                // Add a copy of the current packet to the block
+                currentBlock.add(MediaPacket.make(currentPacket, true));
 
                 // Get the next packet for reading
                 currentPacket = packetPool.poll();
