@@ -1,5 +1,8 @@
-package runsplitter;
+package runsplitter.yi;
 
+import runsplitter.VideoAnalyzer;
+import runsplitter.VideoFeedHandler;
+import runsplitter.VideoFrameHandler;
 import runsplitter.speedrun.MutableSpeedrun;
 
 /**
@@ -28,5 +31,10 @@ public class YoshisIslandAnalyzer implements VideoAnalyzer {
     @Override
     public String toString() {
         return IDENTIFIER;
+    }
+
+    @Override
+    public VideoFeedHandler createFeedHandler(MutableSpeedrun run) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

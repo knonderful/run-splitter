@@ -28,4 +28,12 @@ public interface VideoAnalyzer {
      * @return The {@link VideoFrameHandler}.
      */
     VideoFrameHandler createFrameHandler(MutableSpeedrun run);
+
+    /**
+     * Creates the {@link VideoFeedHandler} that will handle the video feed.
+     *
+     * @param run The {@link MutableSpeedrun} to which the results should be applied.
+     * @return The {@link VideoFeedHandler}.
+     */
+    VideoFeedHandler createFeedHandler(MutableSpeedrun run);
 }

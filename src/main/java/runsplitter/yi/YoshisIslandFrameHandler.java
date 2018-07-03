@@ -1,6 +1,8 @@
-package runsplitter;
+package runsplitter.yi;
 
 import java.awt.image.BufferedImage;
+import runsplitter.VideoFrame;
+import runsplitter.VideoFrameHandler;
 import runsplitter.speedrun.Instant;
 import runsplitter.speedrun.MutableSpeedrun;
 

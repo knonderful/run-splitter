@@ -46,7 +46,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import runsplitter.VideoAnalyzer;
-import runsplitter.YoshisIslandAnalyzer;
+import runsplitter.yi.YoshisIslandAnalyzer;
 import runsplitter.application.ApplicationSettingsPersistence;
 import runsplitter.application.ApplicationState;
 import runsplitter.application.Category;
