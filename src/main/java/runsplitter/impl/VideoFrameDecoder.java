@@ -1,5 +1,6 @@
 package runsplitter.impl;
 
+import io.humble.video.Coder;
 import io.humble.video.Decoder;
 import io.humble.video.MediaPacket;
 import io.humble.video.MediaPicture;
@@ -30,6 +31,11 @@ class VideoFrameDecoder {
      * @return The next {@link VideoFrame} or {@code null} if no more frames are available.
      */
     VideoFrame nextFrame(Supplier<MediaPacket> packetSupplier) {
+        // Open the decoder, if necessary
+        if (decoder.getState() != Coder.State.STATE_OPENED) {
+            decoder.open(null, null);
+        }
+
         // Read packets until we can produce a frame
         MediaPacket packet = packetSupplier.get();
         while (packet != null) {
