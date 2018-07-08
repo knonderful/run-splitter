@@ -29,5 +29,4 @@ public class YoshisIslandCleanFeedHandler implements VideoFeedHandler {
                 })
                 .isPresent();
     }
-
 }

@@ -1,6 +1,5 @@
 package runsplitter.yi;
 
-import java.awt.image.BufferedImage;
 import java.util.function.Predicate;
 import runsplitter.VideoFrame;
 import runsplitter.speedrun.Instant;
@@ -10,13 +9,25 @@ import runsplitter.speedrun.Instant;
  */
 class WhiteScreenPredicate implements Predicate<VideoFrame> {
 
-    private static final int RGB_WHITE = 0xFFFFFFFF;
+    private static final int EXPECTED_COLOR = 0xFFFFFFFF;
+    /**
+     * The average number of deviation points per pixel for a scan area.
+     */
+    private static final int AVG_DEVIATION_POINTS_PER_PIXEL = 10;
+    /**
+     * The maximum value that an RGB color component is allowed to deviate from the expected value.
+     */
+    private static final int MAX_COLOR_COMPONENT_DEVIATION = 10;
+    /**
+     * The horizontal margin from the edge of the original display area in pixels.
+     */
     private static final int HORIZONTAL_MARGIN = 5;
+    /**
+     * The vertical margin from the edge of the original display area in pixels.
+     */
     private static final int VERTICAL_MARGIN = 20;
-    private final int left;
-    private final int top;
-    private final int right;
-    private final int bottom;
+
+    private final AreaScanner scanner;
 
     /**
      * Creates a new instance.
@@ -24,21 +35,22 @@ class WhiteScreenPredicate implements Predicate<VideoFrame> {
      * @param displayRectangle The display {@link Rectangle}.
      */
     public WhiteScreenPredicate(Rectangle displayRectangle) {
-        this.left = displayRectangle.getLeft() + HORIZONTAL_MARGIN;
-        this.top = displayRectangle.getTop() + VERTICAL_MARGIN;
-        this.right = displayRectangle.getRight() - HORIZONTAL_MARGIN;
-        this.bottom = displayRectangle.getBottom() - VERTICAL_MARGIN;
+        // The scan area in the original frame format
+        Rectangle originalScanArea = new Rectangle(
+                Common.ORIGINAL_DISPLAY_AREA.getLeft() + HORIZONTAL_MARGIN,
+                Common.ORIGINAL_DISPLAY_AREA.getTop() + VERTICAL_MARGIN,
+                Common.ORIGINAL_DISPLAY_AREA.getRight() - HORIZONTAL_MARGIN,
+                Common.ORIGINAL_DISPLAY_AREA.getBottom() - VERTICAL_MARGIN);
+        // The translated scan area for the current display format
+        Rectangle scanArea = Geometry.projectRectangle(Common.ORIGINAL_DISPLAY_AREA, originalScanArea, displayRectangle);
+        // The area scanner
+        this.scanner = new LenientAreaScanner(scanArea, EXPECTED_COLOR, MAX_COLOR_COMPONENT_DEVIATION, AVG_DEVIATION_POINTS_PER_PIXEL * scanArea.getSurfaceArea());
     }
 
     @Override
     public boolean test(VideoFrame frame) {
-        BufferedImage image = frame.toImage();
-        for (int y = top; y < bottom; y++) {
-            for (int x = left; x < right; x++) {
-                if (image.getRGB(x, y) != RGB_WHITE) {
-                    return false;
-                }
-            }
+        if (!scanner.matches(frame)) {
+            return false;
         }
         System.out.println("Found white screen at " + new Instant(frame.getTimestampMs()).toTimestamp());
         return true;
