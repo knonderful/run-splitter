@@ -60,4 +60,22 @@ public class Rectangle {
     public int getBottom() {
         return bottom;
     }
+
+    /**
+     * Retrieves the width.
+     *
+     * @return The width in pixels.
+     */
+    public int getWidth() {
+        return (right - left) + 1;
+    }
+
+    /**
+     * Retrieves the height.
+     *
+     * @return The height in pixels.
+     */
+    public int getHeight() {
+        return (bottom - top) + 1;
+    }
 }
