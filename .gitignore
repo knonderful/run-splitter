@@ -1,3 +1,4 @@
 /nbactions.xml
 /analysis_data.json
 **/target
+/nbproject/
