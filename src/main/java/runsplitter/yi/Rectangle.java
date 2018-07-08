@@ -78,4 +78,52 @@ public class Rectangle {
     public int getHeight() {
         return (bottom - top) + 1;
     }
+
+    /**
+     * Retrieves the surface area.
+     *
+     * @return The surface area in pixels.
+     */
+    public int getSurfaceArea() {
+        return getWidth() * getHeight();
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 67 * hash + this.left;
+        hash = 67 * hash + this.top;
+        hash = 67 * hash + this.right;
+        hash = 67 * hash + this.bottom;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Rectangle other = (Rectangle) obj;
+        if (this.left != other.left) {
+            return false;
+        }
+        if (this.top != other.top) {
+            return false;
+        }
+        if (this.right != other.right) {
+            return false;
+        }
+        return this.bottom == other.bottom;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("(%d, %d)-(%d, %d)", left, top, right, bottom);
+    }
 }
